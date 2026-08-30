@@ -1,0 +1,6 @@
+{
+  "name": "SMVITM Bantakal Academic Report Gen",
+  "description": "Automated Internal Progress Report generator for SMVITM Bantakal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
