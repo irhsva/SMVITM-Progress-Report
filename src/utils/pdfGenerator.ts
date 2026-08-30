@@ -907,7 +907,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   const logoSize = 19;
 
   // Resolve logos using first report or default
-  const sampleReport = reports[0] || { logos: { leftPreset: 'sode', rightPreset: 'smvitm' } };
+  const sampleReport = (reports[0] || { logos: { leftPreset: 'sode', rightPreset: 'smvitm' } }) as any;
   const logoImages = await resolveReportLogos(sampleReport as StudentReport);
 
   // 1. Render Left & Right Institutional Crests / Logos
@@ -934,7 +934,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFontSize(10.5);
   doc.setTextColor(139, 29, 36); // Institutional Maroon
   doc.text(
-    'SHRI MADHWA VADIRAJA INSTITUTE OF TECHNOLOGY & MANAGEMENT',
+    (sampleReport.institutionInfo?.name || sampleReport.institution || 'SHRI MADHWA VADIRAJA INSTITUTE OF TECHNOLOGY & MANAGEMENT').toUpperCase(),
     textCenterX,
     headerTopY + 3.8,
     { align: 'center', maxWidth: textCenterWidth }
@@ -944,7 +944,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFontSize(7.8);
   doc.setTextColor(30, 41, 59);
   doc.text(
-    'A Unit of Shri Sode Vadiraja Mutt Education Trust®, Udupi',
+    sampleReport.institutionInfo?.subHeading || sampleReport.subInstitution || 'A Unit of Shri Sode Vadiraja Mutt Education Trust®, Udupi',
     textCenterX,
     headerTopY + 7.8,
     { align: 'center', maxWidth: textCenterWidth }
@@ -954,14 +954,14 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFontSize(6.8);
   doc.setTextColor(71, 85, 105);
   doc.text(
-    'Approved by AICTE, New Delhi | Accredited by NAAC with ‘A’ Grade | Affiliated to VTU, Belagavi',
+    sampleReport.institutionInfo?.accreditation || 'Approved by AICTE, New Delhi | Accredited by NAAC with ‘A’ Grade | Affiliated to VTU, Belagavi',
     textCenterX,
     headerTopY + 11.2,
     { align: 'center', maxWidth: textCenterWidth }
   );
 
   doc.text(
-    'Vishwothama Nagar, Bantakal, Udupi - 574 115, Karnataka, India',
+    sampleReport.institutionInfo?.address || sampleReport.address || 'Vishwothama Nagar, Bantakal, Udupi - 574 115, Karnataka, India',
     textCenterX,
     headerTopY + 14.6,
     { align: 'center', maxWidth: textCenterWidth }
@@ -971,7 +971,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFontSize(8.8);
   doc.setTextColor(139, 29, 36);
   doc.text(
-    'DEPARTMENT OF ARTIFICIAL INTELLIGENCE & DATA SCIENCE',
+    (sampleReport.department || 'DEPARTMENT OF ARTIFICIAL INTELLIGENCE & DATA SCIENCE').toUpperCase(),
     textCenterX,
     headerTopY + 18.8,
     { align: 'center', maxWidth: textCenterWidth }
@@ -1180,7 +1180,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      'Tel: +91 7483031199 | 0820-2589182/183 | Ext: 248 • E-mail: ds@sode-edu.in • Web: https://sode-edu.in/departments/artificial-intelligence-and-data-science',
+      `Tel: ${sampleReport.institutionInfo?.contactTel || sampleReport.contactTel || '+91 820 2589182'} • E-mail: ${sampleReport.institutionInfo?.contactEmail || sampleReport.contactEmail || 'hod.ai@sode-edu.in'} • Web: ${sampleReport.institutionInfo?.contactWeb || sampleReport.contactWeb || 'https://sode-edu.in'}`,
       textCenterX,
       286,
       { align: 'center' }
