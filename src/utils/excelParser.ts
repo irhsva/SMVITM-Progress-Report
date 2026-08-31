@@ -96,6 +96,7 @@ export function parseExcelBuffer(
   let nameCol = -1;
   let proctorNameCol = -1;
   let proctorNumCol = -1;
+  let parentNumCol = -1;
 
   // Track subject column clusters
   interface SubjectColMap {
@@ -138,12 +139,14 @@ export function parseExcelBuffer(
 
     if (topCell.includes('USN') || subCell === 'USN') {
       usnCol = c;
-    } else if ((topCell.includes('NAME') || subCell === 'NAME') && !topCell.includes('PROCTOR') && !subCell.includes('PROCTOR') && !topCell.includes('SUBJECT')) {
+    } else if ((topCell.includes('NAME') || subCell === 'NAME') && !topCell.includes('PROCTOR') && !subCell.includes('PROCTOR') && !topCell.includes('SUBJECT') && !topCell.includes('PARENT')) {
       nameCol = c;
     } else if (combinedCell.includes('PROCTOR NAME') || (combinedCell.includes('PROCTOR') && !combinedCell.includes('NO') && !combinedCell.includes('NUM') && !combinedCell.includes('PHONE') && !combinedCell.includes('MOB'))) {
       proctorNameCol = c;
-    } else if (combinedCell.includes('PROCTOR NO') || combinedCell.includes('PROCTOR NUM') || combinedCell.includes('PROCTOR MOB') || combinedCell.includes('PROCTOR PHONE') || combinedCell.includes('CONTACT')) {
+    } else if (combinedCell.includes('PROCTOR NO') || combinedCell.includes('PROCTOR NUM') || combinedCell.includes('PROCTOR MOB') || combinedCell.includes('PROCTOR PHONE') || combinedCell.includes('CONTACT') && !combinedCell.includes('PARENT')) {
       proctorNumCol = c;
+    } else if (combinedCell.includes('PARENT') || combinedCell.includes('PHONE') || combinedCell.includes('MOBILE')) {
+      parentNumCol = c;
     }
 
     // Check if topCell has a subject code
@@ -211,6 +214,7 @@ export function parseExcelBuffer(
 
     const usnRaw = cleanStr(row[usnCol]);
     const nameRaw = cleanStr(row[nameCol]);
+    const parentNumberRaw = parentNumCol !== -1 ? cleanStr(row[parentNumCol]) : '';
 
     // Skip blank or footer rows
     if (!usnRaw && !nameRaw) continue;
@@ -221,7 +225,7 @@ export function parseExcelBuffer(
 
     const proctorName = proctorNameCol !== -1 ? cleanStr(row[proctorNameCol]) : 'Dr. / Prof. Faculty Advisor';
     const proctorNumber = proctorNumCol !== -1 ? cleanStr(row[proctorNumCol]) : '+91 98450 XXXXX';
-
+    
     // Extract subjects
     const subjectsList: SubjectRecord[] = [];
     let totalMarks = 0;
@@ -347,7 +351,8 @@ export function parseExcelBuffer(
         name: nameRaw || `Student ${r - dataStartRow + 1}`,
         semester: config.semester,
         proctorName: proctorName || 'Prof. Faculty Advisor',
-        proctorNumber: proctorNumber || '+91 98450 12345',
+        proctorNumber: proctorNumber || '+91 98450 XXXXX',
+        parentNumber: parentNumberRaw || '+91 XXXXXXXXXX',
       },
       testName: config.testName,
       academicYear: config.academicYear,

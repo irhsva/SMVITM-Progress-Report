@@ -209,6 +209,7 @@ export function getSampleReports(customSubjects: SubjectDef[] = DEFAULT_SUBJECTS
         semester: DEFAULT_CONFIG.semester,
         proctorName: s.proctorName,
         proctorNumber: s.proctorNumber,
+        parentNumber: (s as any).parentNumber || '+91 XXXXXXXXXX',
       },
       testName: DEFAULT_CONFIG.testName,
       academicYear: DEFAULT_CONFIG.academicYear,
@@ -221,7 +222,7 @@ export function getSampleReports(customSubjects: SubjectDef[] = DEFAULT_SUBJECTS
       contactTel: INSTITUTION_INFO.contactTel,
       contactEmail: INSTITUTION_INFO.contactEmail,
       contactWeb: INSTITUTION_INFO.contactWeb,
-      institutionInfo: INSTITUTION_INFO,
+      institutionInfo: { ...INSTITUTION_INFO, fullContactText: INSTITUTION_INFO.fullContactText },
       subjects,
       overallAttendance: avgAttd,
       totalMarksScored: totalMarks,
@@ -245,14 +246,14 @@ export function generateCustomExcelWorkbook(subjects: SubjectDef[] = DEFAULT_SUB
   rows.push([]);
 
   // Row 4: Top Level Headers
-  const topHeader: any[] = ['SL NO', 'USN', 'NAME', 'Proctor Name', 'Proctor Number'];
+  const topHeader: any[] = ['SL NO', 'USN', 'NAME', 'Proctor Name', 'Proctor Number', 'Parent Number'];
   subjects.forEach((subj) => {
     topHeader.push(`${subj.code} (${subj.name})`, '', '', '');
   });
   rows.push(topHeader);
 
   // Row 5: Sub Headers
-  const subHeader: any[] = ['', '', '', '', ''];
+  const subHeader: any[] = ['', '', '', '', '', ''];
   subjects.forEach((subj) => {
     subHeader.push(`IA1 (${subj.defaultMaxMarks})`, 'CH', 'CA', '%');
   });
@@ -266,6 +267,7 @@ export function generateCustomExcelWorkbook(subjects: SubjectDef[] = DEFAULT_SUB
       s.name,
       s.proctorName,
       s.proctorNumber,
+      (s as any).parentNumber || '+91 XXXXXXXXXX',
     ];
     subjects.forEach((subj, sIdx) => {
       const rawKeyMap = ['bai701', 'bad702', 'bad703', 'bad714b', 'bec755a', 'bme755a', 'bad786'];
@@ -285,20 +287,21 @@ export function generateCustomExcelWorkbook(subjects: SubjectDef[] = DEFAULT_SUB
     { wch: 28 }, // NAME
     { wch: 22 }, // Proctor Name
     { wch: 16 }, // Proctor Number
+    { wch: 16 }, // Parent Number
   ];
   for (let i = 0; i < subjects.length * 4; i++) {
     colWidths.push({ wch: 11 });
   }
   ws['!cols'] = colWidths;
 
-  const totalCols = 5 + subjects.length * 4 - 1;
+  const totalCols = 6 + subjects.length * 4 - 1;
   const merges = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols } },
     { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols } },
   ];
 
-  let colIdx = 5;
+  let colIdx = 6;
   subjects.forEach(() => {
     merges.push({ s: { r: 4, c: colIdx }, e: { r: 4, c: colIdx + 3 } });
     colIdx += 4;

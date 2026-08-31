@@ -96,6 +96,7 @@ export const DownloadAllModal: React.FC<DownloadAllModalProps> = ({
       if (format === 'pdf-zip') {
         await downloadAllIndividualPdfsZip(
           reports,
+          config.attendanceWarningThreshold,
           `SMVITM_AI_DS_7thSem_Individual_PDF_Reports_${reports.length}.zip`,
           (current, total, name) => {
             setProgress({ current, total, name });
@@ -105,6 +106,7 @@ export const DownloadAllModal: React.FC<DownloadAllModalProps> = ({
       } else if (format === 'pdf-merged') {
         await downloadAllMergedPdf(
           reports,
+          config.attendanceWarningThreshold,
           `SMVITM_AI_DS_7thSem_Master_All_Students_Reports.pdf`,
           (current, total, name) => {
             setProgress({ current, total, name });
@@ -114,6 +116,7 @@ export const DownloadAllModal: React.FC<DownloadAllModalProps> = ({
       } else if (format === 'proctor-zip') {
         await downloadProctorWisePdfsZip(
           datasetReports,
+          config.attendanceWarningThreshold,
           `SMVITM_Proctor_Wise_Organized_Student_PDFs.zip`,
           (current, total, name) => {
             setProgress({ current, total, name });
@@ -126,14 +129,14 @@ export const DownloadAllModal: React.FC<DownloadAllModalProps> = ({
       } else if (format === 'single-proctor-zip') {
         const targetProctor = specificProctor || selectedProctorForDownload;
         if (!targetProctor) return;
-        await downloadSingleProctorPdfsZip(datasetReports, targetProctor, (current, total, name) => {
+        await downloadSingleProctorPdfsZip(datasetReports, targetProctor, config.attendanceWarningThreshold, (current, total, name) => {
           setProgress({ current, total, name });
         });
         setDownloadSuccess(`Downloaded student PDFs ZIP archive for proctor: ${targetProctor}!`);
       } else if (format === 'single-proctor-pdf') {
         const targetProctor = specificProctor || selectedProctorForDownload;
         if (!targetProctor) return;
-        await downloadSingleProctorMergedPdf(datasetReports, targetProctor, (current, total, name) => {
+        await downloadSingleProctorMergedPdf(datasetReports, targetProctor, config.attendanceWarningThreshold, (current, total, name) => {
           setProgress({ current, total, name });
         });
         setDownloadSuccess(`Downloaded combined Master PDF for proctor: ${targetProctor}!`);

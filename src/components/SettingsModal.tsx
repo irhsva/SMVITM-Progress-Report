@@ -153,6 +153,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="text-slate-800 font-medium">Auto-generate academic remarks</span>
               </label>
 
+              <div className="mb-3">
+                <label className="block text-slate-700 font-medium mb-1">Attendance Warning Threshold (%)</label>
+                <input
+                  type="number"
+                  value={form.attendanceWarningThreshold}
+                  onChange={(e) => setForm({ ...form, attendanceWarningThreshold: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g. 85"
+                  required
+                />
+              </div>
+
               <h4 className="text-sm font-bold text-slate-800 mb-2">Report Footer / Institution Info</h4>
               <div className="space-y-2">
                 <input
@@ -182,6 +194,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onChange={(e) => setForm({ ...form, institutionInfo: { ...form.institutionInfo, contactEmail: e.target.value } })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
                   placeholder="Contact Email"
+                />
+                <input
+                  type="text"
+                  value={form.institutionInfo.fullContactText}
+                  onChange={(e) => setForm({ ...form, institutionInfo: { ...form.institutionInfo, fullContactText: e.target.value } })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
+                  placeholder="Full Contact Text"
                 />
               </div>
             </div>

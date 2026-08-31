@@ -1,4 +1,5 @@
 import React from 'react';
+import { MessageSquare } from 'lucide-react';
 import { StudentReport, SubjectRecord } from '../types';
 import { InstitutionalLogoRenderer } from './InstitutionalLogo';
 
@@ -54,6 +55,19 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
           : 'p-6 sm:p-8 md:p-10 max-w-4xl text-sm shadow-md print:shadow-none print:p-2 print:max-w-none'
       } rounded-sm border border-slate-200 print:border-none print:m-0 print:w-full print:break-inside-avoid`}
     >
+      {/* 0. Share Button */}
+      <div className="flex justify-end mb-2 print:hidden">
+        <button
+          onClick={() => {
+            const message = `Internal Progress Report for ${report.student.name} (USN: ${report.student.usn}). Attendance: ${report.overallAttendance}%. Marks: ${report.percentageMarks}%. Please check the internal progress report details.`;
+            window.open(`https://wa.me/${report.student.parentNumber.replace(/[^\d+]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          Share via WhatsApp
+        </button>
+      </div>
       {/* 1. Top Institution Header Banner with Logos */}
       <div className="flex items-center justify-between pb-3 border-b-2 border-[#8b1d24] gap-2 sm:gap-4">
         {/* Left Institutional Logo (SODE Group of Institutions) */}

@@ -58,6 +58,7 @@ export const INSTITUTION_INFO = {
   contactTel: '+91 7483031199 | 0820-2589182/183 | Ext: 248',
   contactEmail: 'ds@sode-edu.in',
   contactWeb: 'https://sode-edu.in',
+  fullContactText: 'Tel: +91 7483031199 | 0820-2589182/183 | Ext: 248 • E-mail: ds@sode-edu.in • Web: https://sode-edu.in/departments/artificial-intelligence-and-data-science',
 };
 
 export const DEFAULT_CONFIG: ReportConfig = {
@@ -69,6 +70,6 @@ export const DEFAULT_CONFIG: ReportConfig = {
   department: 'SMVITM BANTAKAL',
   autoRemarks: true,
   passThresholdMarks: 20,
-  attendanceWarningThreshold: 75,
+  attendanceWarningThreshold: 85,
   institutionInfo: INSTITUTION_INFO,
 };

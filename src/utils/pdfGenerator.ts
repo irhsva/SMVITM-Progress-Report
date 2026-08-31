@@ -274,6 +274,7 @@ export async function resolveReportLogos(report: StudentReport): Promise<{ left?
  */
 export function buildStudentReportPdf(
   report: StudentReport,
+  attendanceWarningThreshold: number,
   existingDoc?: jsPDF,
   logoImages?: { left?: string; right?: string }
 ): jsPDF {
@@ -447,8 +448,8 @@ export function buildStudentReportPdf(
 
   const tableBody = report.subjects.map((sub, idx) => {
     const isNotEnrolled = sub.isNotEnrolled;
-    const isLowAtt = typeof sub.attendancePercentage === 'number' && sub.attendancePercentage < 75 && !isNotEnrolled;
-    const isLowMarks = typeof sub.marksScored === 'number' && sub.marksScored < 20 && !isNotEnrolled;
+    const isLowAtt = typeof sub.attendancePercentage === 'number' && sub.attendancePercentage < attendanceWarningThreshold && !isNotEnrolled;
+    const isLowMarks = typeof sub.marksScored === 'number' && sub.marksScored < (sub.maxMarks ?? 50) * 0.4 && !isNotEnrolled;
 
     return [
       { content: String(idx + 1), styles: { halign: 'center' as const } },
@@ -623,9 +624,9 @@ export function buildStudentReportPdf(
 /**
  * Downloads a single student report directly as a crisp vector PDF with institutional logos
  */
-export async function downloadSingleStudentPdf(report: StudentReport): Promise<void> {
+export async function downloadSingleStudentPdf(report: StudentReport, attendanceWarningThreshold: number): Promise<void> {
   const logos = await resolveReportLogos(report);
-  const doc = buildStudentReportPdf(report, undefined, logos);
+  const doc = buildStudentReportPdf(report, attendanceWarningThreshold, undefined, logos);
   const cleanName = (report.student.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
   const usn = report.student.usn || 'STUDENT';
   const filename = `${usn}_${cleanName}_Report.pdf`;
@@ -638,6 +639,7 @@ export async function downloadSingleStudentPdf(report: StudentReport): Promise<v
  */
 export async function downloadAllIndividualPdfsZip(
   reports: StudentReport[],
+  attendanceWarningThreshold: number,
   archiveName = 'SMVITM_All_Individual_Student_PDFs.zip',
   onProgress?: ProgressCallback
 ): Promise<void> {
@@ -666,7 +668,7 @@ export async function downloadAllIndividualPdfsZip(
       const key = `${report.logos?.leftPreset || 'sode'}_${report.logos?.leftCustomUrl || ''}_${report.logos?.rightPreset || 'smvitm'}_${report.logos?.rightCustomUrl || ''}`;
       const logos = logoMap.get(key) || (await resolveReportLogos(report));
 
-      const doc = buildStudentReportPdf(report, undefined, logos);
+      const doc = buildStudentReportPdf(report, attendanceWarningThreshold, undefined, logos);
       const cleanName = (report.student.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
       const usn = report.student.usn || `STUDENT_${i + 1}`;
       const filename = `${usn}_${cleanName}_Report.pdf`;
@@ -703,6 +705,7 @@ export async function downloadAllIndividualPdfsZip(
  */
 export async function downloadAllMergedPdf(
   reports: StudentReport[],
+  attendanceWarningThreshold: number,
   filename = 'SMVITM_All_Students_Master_Report.pdf',
   onProgress?: ProgressCallback
 ): Promise<void> {
@@ -737,7 +740,7 @@ export async function downloadAllMergedPdf(
     const key = `${report.logos?.leftPreset || 'sode'}_${report.logos?.leftCustomUrl || ''}_${report.logos?.rightPreset || 'smvitm'}_${report.logos?.rightCustomUrl || ''}`;
     const logos = logoMap.get(key) || (await resolveReportLogos(report));
 
-    buildStudentReportPdf(report, mergedDoc, logos);
+    buildStudentReportPdf(report, attendanceWarningThreshold, mergedDoc, logos);
 
     if (i % 5 === 0) {
       await new Promise((r) => setTimeout(r, 10));
@@ -811,7 +814,7 @@ export async function downloadProctorWisePdfsZip(
         const key = `${report.logos?.leftPreset || 'sode'}_${report.logos?.leftCustomUrl || ''}_${report.logos?.rightPreset || 'smvitm'}_${report.logos?.rightCustomUrl || ''}`;
         const logos = logoMap.get(key) || (await resolveReportLogos(report));
 
-        const doc = buildStudentReportPdf(report, undefined, logos);
+        const doc = buildStudentReportPdf(report, attendanceWarningThreshold, undefined, logos);
         const cleanName = (report.student.name || 'Student').replace(/[^a-zA-Z0-9_-]/g, '_');
         const usn = report.student.usn || `STUDENT_${processedCount}`;
         const filename = `${usn}_${cleanName}_Report.pdf`;
@@ -861,6 +864,7 @@ export async function downloadProctorWisePdfsZip(
 export async function downloadSingleProctorPdfsZip(
   reports: StudentReport[],
   proctorName: string,
+  attendanceWarningThreshold: number,
   onProgress?: ProgressCallback
 ): Promise<void> {
   const proctorReports = reports.filter(
@@ -872,7 +876,7 @@ export async function downloadSingleProctorPdfsZip(
   const cleanProctor = proctorName.replace(/[^a-zA-Z0-9_-]/g, '_');
   const archiveName = `Proctor_${cleanProctor}_Student_PDF_Reports_${proctorReports.length}.zip`;
 
-  await downloadAllIndividualPdfsZip(proctorReports, archiveName, onProgress);
+  await downloadAllIndividualPdfsZip(proctorReports, attendanceWarningThreshold, archiveName, onProgress);
 }
 
 /**
@@ -881,6 +885,7 @@ export async function downloadSingleProctorPdfsZip(
 export async function downloadSingleProctorMergedPdf(
   reports: StudentReport[],
   proctorName: string,
+  attendanceWarningThreshold: number,
   onProgress?: ProgressCallback
 ): Promise<void> {
   const proctorReports = reports.filter(
@@ -892,7 +897,7 @@ export async function downloadSingleProctorMergedPdf(
   const cleanProctor = proctorName.replace(/[^a-zA-Z0-9_-]/g, '_');
   const filename = `Proctor_${cleanProctor}_Combined_Reports_${proctorReports.length}.pdf`;
 
-  await downloadAllMergedPdf(proctorReports, filename, onProgress);
+  await downloadAllMergedPdf(proctorReports, attendanceWarningThreshold, filename, onProgress);
 }
 
 /**
@@ -1015,7 +1020,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   const lowMarksStudents: { name: string; usn: string; proctor: string; subjectCode: string; subjectName: string; marks: number }[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < 20) {
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < (s.maxMarks ?? 50) * 0.4) {
         lowMarksStudents.push({
           name: r.student.name,
           usn: r.student.usn,
@@ -1035,7 +1040,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 2.5, textColor: [15, 23, 42] },
     headStyles: { fillColor: [139, 29, 36], textColor: [255, 255, 255], fontStyle: 'bold' },
-    head: [['Total Enrolled', 'Avg Class Attendance', 'Avg IA-1 Score', 'Attendance Shortage (<75%)', 'IA-1 Defaulters (<20)']],
+    head: [['Total Enrolled', 'Avg Class Attendance', 'Avg IA-1 Score', 'Attendance Shortage (<75%)', 'IA-1 Defaulters (<40%)']],
     body: [[
       String(totalStudents),
       `${avgClassAttendance}%`,
@@ -1068,7 +1073,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
         entry.totalMarks += s.marksNum;
         if (entry.maxMarks === -1 || s.marksNum > entry.maxMarks) entry.maxMarks = s.marksNum;
         if (entry.minMarks === 999 || s.marksNum < entry.minMarks) entry.minMarks = s.marksNum;
-        if (s.marksNum >= 20) entry.passCount++;
+        if (s.marksNum >= (s.maxMarks ?? 50) * 0.4) entry.passCount++;
       }
       if (s.attendanceNum !== null && s.attendanceNum !== undefined) {
         entry.totalAttd += s.attendanceNum;
@@ -1113,7 +1118,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text(`2. IA-1 DEFAULTERS LIST (SCORING < 20 / 50) [Total: ${lowMarksStudents.length}]`, margin, currentY);
+  doc.text(`2. IA-1 DEFAULTERS LIST (SCORING < 40% OF MAX MARKS) [Total: ${lowMarksStudents.length}]`, margin, currentY);
   currentY += 2;
 
   const lowMarksRows = lowMarksStudents.map((item, idx) => [
@@ -1180,7 +1185,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      `Tel: ${sampleReport.institutionInfo?.contactTel || sampleReport.contactTel || '+91 820 2589182'} • E-mail: ${sampleReport.institutionInfo?.contactEmail || sampleReport.contactEmail || 'hod.ai@sode-edu.in'} • Web: ${sampleReport.institutionInfo?.contactWeb || sampleReport.contactWeb || 'https://sode-edu.in'}`,
+      sampleReport.institutionInfo?.fullContactText || `Tel: ${sampleReport.institutionInfo?.contactTel || sampleReport.contactTel || '+91 820 2589182'} • E-mail: ${sampleReport.institutionInfo?.contactEmail || sampleReport.contactEmail || 'hod.ai@sode-edu.in'} • Web: ${sampleReport.institutionInfo?.contactWeb || sampleReport.contactWeb || 'https://sode-edu.in'}`,
       textCenterX,
       286,
       { align: 'center' }

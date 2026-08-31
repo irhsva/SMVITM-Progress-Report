@@ -203,7 +203,7 @@ export default function App() {
     if (!selectedStudent || isGeneratingSinglePdf) return;
     setIsGeneratingSinglePdf(true);
     try {
-      await downloadSingleStudentPdf(selectedStudent);
+      await downloadSingleStudentPdf(selectedStudent, config.attendanceWarningThreshold);
     } catch (err) {
       console.error('Error generating single student PDF:', err);
     } finally {
@@ -321,10 +321,10 @@ export default function App() {
                   ? 'bg-amber-600 text-white border-amber-700'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
               }`}
-              title="Filter low attendance (<75%)"
+              title={`Filter low attendance (<${config.attendanceWarningThreshold}%)`}
             >
               <AlertTriangle className="w-3 h-3" />
-              <span>Attd &lt;75%</span>
+              <span>Attd &lt;{config.attendanceWarningThreshold}%</span>
             </button>
 
             <button
@@ -334,10 +334,10 @@ export default function App() {
                   ? 'bg-rose-600 text-white border-rose-700'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
               }`}
-              title="Filter low marks (<20/50)"
+              title="Filter low marks (<40% of max)"
             >
               <AlertCircle className="w-3 h-3" />
-              <span>IA &lt;20</span>
+              <span>IA &lt;40%</span>
             </button>
           </div>
         </div>
@@ -356,7 +356,7 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredReports.map((r, idx) => {
             const isSelected = selectedStudent?.id === r.id;
-            const isWarningAttd = (r.overallAttendance || 0) < 75;
+            const isWarningAttd = (r.overallAttendance || 0) < config.attendanceWarningThreshold;
             const isLowScore = (r.percentageMarks || 0) < 40;
 
             return (
@@ -818,7 +818,7 @@ export default function App() {
                           <td className="p-2 text-center font-mono text-slate-500">{bme?.marksScored || '-'}</td>
                           <td className="p-2 text-center font-mono">{bad8?.marksScored || '-'}</td>
                           <td className="p-2 text-center font-mono font-semibold">
-                            <span className={`${(r.overallAttendance || 0) < 75 ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>
+                            <span className={`${(r.overallAttendance || 0) < config.attendanceWarningThreshold ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>
                               {r.overallAttendance}%
                             </span>
                           </td>

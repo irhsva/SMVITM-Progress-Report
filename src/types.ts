@@ -28,6 +28,7 @@ export interface StudentInfo {
   semester: string;
   proctorName: string;
   proctorNumber: string;
+  parentNumber: string;
 }
 
 export type LogoPreset = 'sode' | 'smvitm' | 'custom' | 'none';
@@ -49,6 +50,7 @@ export interface InstitutionInfo {
   contactTel: string;
   contactEmail: string;
   contactWeb: string;
+  fullContactText: string;
 }
 
 export interface StudentReport {
