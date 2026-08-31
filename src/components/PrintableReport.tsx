@@ -298,25 +298,14 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
         </div>
       </div>
 
-      {/* 5. Section 3: Official Signatures Section (3 Symmetrical Columns Matching PDF) */}
-      <div className="mt-8 sm:mt-12 pt-4 flex justify-between items-end gap-2">
-        {/* Column 1: Student Signature */}
+      {/* 5. Section 3: Official Signatures Section (2 Symmetrical Columns) */}
+      <div className="mt-8 sm:mt-12 pt-4 flex justify-between items-end gap-2 px-12">
+        {/* Column 1: Proctor Signature */}
         <div className="text-center w-40 sm:w-48">
-          <div className="h-10 sm:h-12 border-b border-dashed border-slate-500 mb-1.5 flex items-end justify-center">
-            <span className="text-[10px] text-slate-300 italic select-none">Student Sign</span>
-          </div>
-          <p className="text-xs sm:text-[13px] font-bold text-slate-900">
-            Signature of Student
+          <p className="text-xs sm:text-[13px] font-bold text-slate-900 mb-1">
+            Sd/-
           </p>
-          <p className="text-[10px] sm:text-xs text-slate-600 truncate">
-            ({report.student.name || 'Student'})
-          </p>
-        </div>
-
-        {/* Column 2: Proctor Signature */}
-        <div className="text-center w-40 sm:w-48">
           <div className="h-10 sm:h-12 border-b border-dashed border-slate-500 mb-1.5 flex items-end justify-center">
-            <span className="text-[10px] text-slate-300 italic select-none">Proctor Sign</span>
           </div>
           <p className="text-xs sm:text-[13px] font-bold text-slate-900">
             Signature of Proctor
@@ -326,10 +315,12 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
           </p>
         </div>
 
-        {/* Column 3: In-Charge HOD Signature */}
+        {/* Column 2: In-Charge HOD Signature */}
         <div className="text-center w-44 sm:w-56">
+          <p className="text-xs sm:text-[13px] font-extrabold text-slate-900 mb-1">
+            Sd/-
+          </p>
           <div className="h-10 sm:h-12 border-b border-dashed border-slate-500 mb-1.5 flex items-end justify-center">
-            <span className="text-[11px] font-serif italic text-slate-400">Tejaswini H</span>
           </div>
           <p className="text-xs sm:text-[13px] font-extrabold text-slate-900">
             {report.hodTitle || 'In-charge HOD'}

@@ -571,19 +571,17 @@ export function buildStudentReportPdf(
     currentY = 260;
   }
 
-  const sigWidth = contentWidth / 3;
-  const col1Center = margin + sigWidth * 0.5;
-  const col2Center = margin + sigWidth * 1.5;
-  const col3Center = margin + sigWidth * 2.5;
+  const sigWidth = contentWidth / 2; // Split into two columns for Proctor and HOD
+  const col1Center = margin + sigWidth * 0.5; // Proctor left
+  const col2Center = margin + sigWidth * 1.5; // HOD right
 
-  // Dotted lines for signatures
+  // Dotted lines for signatures (only for Proctor and HOD)
   doc.setDrawColor(100, 116, 139);
   doc.setLineDashPattern([1.5, 1.5], 0);
   doc.setLineWidth(0.3);
 
   doc.line(col1Center - 22, currentY, col1Center + 22, currentY);
-  doc.line(col2Center - 22, currentY, col2Center + 22, currentY);
-  doc.line(col3Center - 25, currentY, col3Center + 25, currentY);
+  doc.line(col2Center - 25, currentY, col2Center + 25, currentY);
 
   doc.setLineDashPattern([], 0); // reset line dash
 
@@ -592,16 +590,17 @@ export function buildStudentReportPdf(
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
 
-  doc.text('Signature of Student', col1Center, currentY + 4, { align: 'center' });
-  doc.text('Signature of Proctor', col2Center, currentY + 4, { align: 'center' });
-  doc.text(report.hodTitle || 'In-charge HOD', col3Center, currentY + 4, { align: 'center' });
+  doc.text('Sd/-', col1Center, currentY - 2, { align: 'center' });
+  doc.text('Sd/-', col2Center, currentY - 2, { align: 'center' });
+
+  doc.text('Signature of Proctor', col1Center, currentY + 4, { align: 'center' });
+  doc.text(report.hodTitle || 'In-charge HOD', col2Center, currentY + 4, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
-  doc.text(`(${report.student.name || 'Student'})`, col1Center, currentY + 7.5, { align: 'center' });
-  doc.text(`(${report.student.proctorName || 'Proctor'})`, col2Center, currentY + 7.5, { align: 'center' });
-  doc.text(`(${report.hodName || 'Dr. Tejaswini H'})`, col3Center, currentY + 7.5, { align: 'center' });
+  doc.text(`(${report.student.proctorName || 'Proctor'})`, col1Center, currentY + 7.5, { align: 'center' });
+  doc.text(`(${report.hodName || 'Dr. Tejaswini H'})`, col2Center, currentY + 7.5, { align: 'center' });
 
   // 7. Institutional Footer Banner
   doc.setDrawColor(203, 213, 225);
