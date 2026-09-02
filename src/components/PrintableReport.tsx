@@ -275,13 +275,13 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
                   AVERAGE ATTENDANCE & TOTAL MARKS
                 </td>
                 <td className="p-2 text-center font-mono text-[10px] sm:text-xs">
-                  {totalHeld}
+                  -
                 </td>
                 <td className="p-2 text-center font-mono text-[10px] sm:text-xs">
-                  {totalAttended}
+                  -
                 </td>
                 <td className="p-2 text-center font-mono font-black text-[10px] sm:text-xs text-blue-950">
-                  {report.overallAttendance !== null ? report.overallAttendance : '-'}
+                  -
                 </td>
                 <td className="p-2 text-center font-mono text-[10px] sm:text-xs">
                   {report.totalMaxMarks ?? '-'}
@@ -290,7 +290,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
                   {report.totalMarksScored ?? '-'}
                 </td>
                 <td className="p-2 text-center font-mono text-[10px] sm:text-xs text-slate-800">
-                  {report.percentageMarks !== null ? `${report.percentageMarks}% Score` : '-'}
+                  -
                 </td>
               </tr>
             </tfoot>

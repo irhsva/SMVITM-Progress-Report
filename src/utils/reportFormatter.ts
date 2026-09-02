@@ -98,13 +98,7 @@ export function formatWhatsAppMessage(report: StudentReport): string {
     lines.push(`• *${s.code}* (${s.name.slice(0, 22)}..): IA Marks: *${s.marksScored}/50* | Attd: *${s.attendancePercentage}* (${s.classAttended}/${s.classHeld})`);
   });
 
-  if (report.overallAttendance !== null && report.overallAttendance !== undefined) {
-    lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
-    lines.push(`📈 *Overall Attendance:* ${report.overallAttendance}%`);
-  }
-  if (report.percentageMarks !== null && report.percentageMarks !== undefined) {
-    lines.push(`🎯 *Overall IA-1 Marks:* ${report.percentageMarks}% (${report.totalMarksScored}/${report.totalMaxMarks})`);
-  }
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);
   lines.push(`\n- ${report.hodName}, ${report.hodTitle}`);
 
   return lines.join('\n');

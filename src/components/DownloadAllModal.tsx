@@ -45,7 +45,7 @@ export const DownloadAllModal: React.FC<DownloadAllModalProps> = ({
   reports,
   allReports,
   initialProctor = '',
-  config: _config,
+  config,
   onTriggerPrintAll,
 }) => {
   if (!isOpen) return null;

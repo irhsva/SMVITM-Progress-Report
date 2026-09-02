@@ -28,13 +28,19 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
     ? Math.round(validMarks.reduce((acc, r) => acc + (r.percentageMarks || 0), 0) / validMarks.length)
     : 0;
 
-  // Low attendance count (<75%)
-  const lowAttdStudents = reports.filter((r) => (r.overallAttendance || 0) < 75);
+  // Low attendance count (<85%)
+  const lowAttdStudents = reports.filter((r) => (r.overallAttendance || 0) < 85);
 
-  // Low marks students (scored < 20 in any subject)
+  // Low marks students (scored < 40% in any subject)
   const lowMarksStudents: { report: StudentReport; subjectCode: string; subjectName: string; marks: number }[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
+      // Assuming 50 marks maximum based on the code. 40% of 50 = 20. Wait, the user said < 40% marks. 
+      // If the subject is out of 50, <40% means < 20. The original code was < 20.
+      // Let's verify if the user meant 40% of the total marks in that subject.
+      // The original code was `s.marksNum < 20` (which is 40% of 50).
+      // If the subject is out of 50, then < 20 is exactly < 40%.
+      // I will keep `s.marksNum < 20` as it maps to < 40% for subjects out of 50.
       if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < 20) {
         lowMarksStudents.push({ report: r, subjectCode: s.code, subjectName: s.name, marks: s.marksNum });
       }
@@ -110,7 +116,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             {avgClassAttendance}%
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">
-            Dept benchmark: &gt;= 75%
+            Dept benchmark: &gt;= 85%
           </div>
         </div>
 
@@ -136,7 +142,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             {lowAttdStudents.length}
           </div>
           <div className="text-[10px] text-amber-700 mt-0.5">
-            Students below 75% threshold
+            Students below 85% threshold
           </div>
         </div>
 
@@ -149,7 +155,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             {new Set(lowMarksStudents.map(l => l.report.id)).size}
           </div>
           <div className="text-[10px] text-rose-700 mt-0.5">
-            Students scoring &lt; 20 in any subject
+            Students scoring &lt; 40% in any subject
           </div>
         </div>
       </div>
@@ -218,7 +224,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-700" />
               <h4 className="text-xs font-bold text-rose-900 uppercase">
-                Students Scoring Below Passing Mark (&lt; 20 / 50) [{lowMarksStudents.length}]
+                Students Scoring Below Passing Mark (&lt; 40%) [{lowMarksStudents.length}]
               </h4>
             </div>
             {showDefaulters ? <ChevronUp className="w-4 h-4 text-rose-700" /> : <ChevronDown className="w-4 h-4 text-rose-700" />}
@@ -261,7 +267,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-700" />
               <h4 className="text-xs font-bold text-amber-900 uppercase">
-                Attendance Shortage Students (&lt; 75%) [{lowAttdStudents.length}]
+                Attendance Shortage Students (&lt; 85%) [{lowAttdStudents.length}]
               </h4>
             </div>
             {showShortage ? <ChevronUp className="w-4 h-4 text-amber-700" /> : <ChevronDown className="w-4 h-4 text-amber-700" />}

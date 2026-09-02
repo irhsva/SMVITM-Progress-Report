@@ -28,10 +28,11 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showSubjectConfig, setShowSubjectConfig] = useState(false);
 
-  // Form state for adding new subject
+  // Form state for adding/editing new subject
+  const [editingSubject, setEditingSubject] = useState<SubjectDef | null>(null);
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
-  const [newMaxMarks, setNewMaxMarks] = useState(50);
+  const [newMaxMarks, setNewMaxMarks] = useState(25);
   const [newIsElective, setNewIsElective] = useState(false);
 
   const handleFileProcess = async (file: File) => {
@@ -95,21 +96,38 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const startEditSubject = (subj: SubjectDef) => {
+    setEditingSubject(subj);
+    setNewCode(subj.code);
+    setNewName(subj.name);
+    setNewMaxMarks(subj.defaultMaxMarks);
+    setNewIsElective(subj.isElective || false);
+  };
+
   const handleAddSubject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCode.trim() || !newName.trim()) return;
-    const updated = [
-      ...customSubjects,
-      {
+
+    const newSubject = {
         code: newCode.trim().toUpperCase(),
         name: newName.trim(),
-        defaultMaxMarks: Number(newMaxMarks) || 50,
+        defaultMaxMarks: Number(newMaxMarks) || 25,
         isElective: newIsElective,
-      },
-    ];
+    };
+
+    let updated: SubjectDef[];
+    if (editingSubject) {
+        updated = customSubjects.map(s => s.code === editingSubject.code ? newSubject : s);
+        setEditingSubject(null);
+    } else {
+        updated = [...customSubjects, newSubject];
+    }
+    
     onSubjectsChange(updated);
     setNewCode('');
     setNewName('');
+    setNewMaxMarks(25);
+    setNewIsElective(false);
   };
 
   const handleDeleteSubject = (code: string) => {
@@ -210,13 +228,22 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
                   </div>
                   <p className="text-xs font-medium text-slate-900 mt-1 line-clamp-2">{subj.name}</p>
                 </div>
-                <button
-                  onClick={() => handleDeleteSubject(subj.code)}
-                  className="text-slate-400 hover:text-red-600 p-1 transition-colors"
-                  title="Remove Subject"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => startEditSubject(subj)}
+                    className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
+                    title="Edit Subject"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSubject(subj.code)}
+                    className="text-slate-400 hover:text-red-600 p-1 transition-colors"
+                    title="Remove Subject"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -273,7 +300,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
               className="px-3.5 py-1.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow-sm flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Subject</span>
+              <span>{editingSubject ? 'Update Subject' : 'Add Subject'}</span>
             </button>
           </form>
         </div>

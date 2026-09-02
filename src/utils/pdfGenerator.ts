@@ -489,10 +489,10 @@ export function buildStudentReportPdf(
   const tableFoot = [
     [
       { content: 'AVERAGE ATTENDANCE & TOTAL MARKS', colSpan: 2, styles: { halign: 'right' as const, fontStyle: 'bold' as const } },
-      { content: String(totalHeld), styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
-      { content: String(totalAttended), styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
+      { content: '-', styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
+      { content: '-', styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
       {
-        content: report.overallAttendance !== null ? `${report.overallAttendance}%` : '-',
+        content: '-',
         styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: [30, 58, 138] as [number, number, number] },
       },
       { content: String(report.totalMaxMarks ?? '-'), styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
@@ -501,7 +501,7 @@ export function buildStudentReportPdf(
         styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: [30, 58, 138] as [number, number, number] },
       },
       {
-        content: report.percentageMarks !== null ? `${report.percentageMarks}% Score` : '-',
+        content: '-',
         styles: { halign: 'center' as const, fontStyle: 'bold' as const },
       },
     ],
@@ -754,6 +754,7 @@ export async function downloadAllMergedPdf(
  */
 export async function downloadProctorWisePdfsZip(
   reports: StudentReport[],
+  attendanceWarningThreshold: number,
   archiveName = 'SMVITM_Proctor_Wise_Student_PDF_Reports.zip',
   onProgress?: ProgressCallback
 ): Promise<void> {

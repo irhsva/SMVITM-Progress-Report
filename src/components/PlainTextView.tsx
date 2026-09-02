@@ -7,9 +7,12 @@ import { downloadAllReportsZip } from '../utils/downloadAllReports';
 interface PlainTextViewProps {
   reports: StudentReport[];
   selectedStudent: StudentReport | null;
+  currentStudentIndex: number;
+  onNext: () => void;
+  onPrev: () => void;
 }
 
-export const PlainTextView: React.FC<PlainTextViewProps> = ({ reports, selectedStudent }) => {
+export const PlainTextView: React.FC<PlainTextViewProps> = ({ reports, selectedStudent, currentStudentIndex, onNext, onPrev }) => {
   const [viewMode, setViewMode] = useState<'selected' | 'all'>('all');
   const [copiedType, setCopiedType] = useState<string | null>(null);
 
@@ -52,8 +55,29 @@ export const PlainTextView: React.FC<PlainTextViewProps> = ({ reports, selectedS
           </div>
         </div>
 
-        {/* View Mode Toggle */}
+        {/* View Mode Toggle & Navigation */}
         <div className="flex items-center gap-2">
+          {viewMode === 'selected' && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <button
+                onClick={onPrev}
+                disabled={currentStudentIndex <= 0}
+                className="px-2 py-1 text-xs font-semibold rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300"
+              >
+                Prev
+              </button>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {currentStudentIndex + 1} / {reports.length}
+              </span>
+              <button
+                onClick={onNext}
+                disabled={currentStudentIndex >= reports.length - 1}
+                className="px-2 py-1 text-xs font-semibold rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300"
+              >
+                Next
+              </button>
+            </div>
+          )}
           <div className="inline-flex p-1 bg-slate-800 rounded-lg border border-slate-700 text-xs font-medium">
             <button
               id="view-all-reports-btn"
@@ -93,12 +117,22 @@ export const PlainTextView: React.FC<PlainTextViewProps> = ({ reports, selectedS
           {currentReport && (
             <button
               id="copy-whatsapp-btn"
-              onClick={() => copyToClipboard(formatWhatsAppMessage(currentReport), 'whatsapp')}
+              onClick={() => {
+                const msg = formatWhatsAppMessage(currentReport);
+                // Copy to clipboard
+                copyToClipboard(msg, 'whatsapp');
+                // Open WhatsApp
+                if (currentReport.student.parentNumber) {
+                    window.open(`https://wa.me/${currentReport.student.parentNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                } else {
+                    alert('Parent phone number not available for this student.');
+                }
+              }}
               className="px-2.5 py-1.5 bg-emerald-700/60 hover:bg-emerald-600/80 text-emerald-100 rounded-md border border-emerald-500/40 flex items-center gap-1.5 transition-colors"
-              title="Copy WhatsApp parent notification summary"
+              title="Send WhatsApp parent notification and copy to clipboard"
             >
               {copiedType === 'whatsapp' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copiedType === 'whatsapp' ? 'Copied WhatsApp!' : 'WhatsApp Msg'}</span>
+              <span>{copiedType === 'whatsapp' ? 'WhatsApp Sent!' : 'WhatsApp Msg'}</span>
             </button>
           )}
 

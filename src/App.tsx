@@ -69,8 +69,29 @@ export default function App() {
   const [printMode, setPrintMode] = useState<'single' | 'all'>('single');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isGeneratingSinglePdf, setIsGeneratingSinglePdf] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
 
-  // Load sample reports on initial mount so preview is instantly active
+  // ... (existing code)
+
+  const toggleStudentSelection = (id: string) => {
+    const newSet = new Set(selectedStudentIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedStudentIds(newSet);
+  };
+
+  const handleWhatsAppSend = () => {
+    selectedStudentIds.forEach(id => {
+      const studentReport = reports.find(r => r.id === id);
+      if (studentReport && studentReport.student.parentNumber) {
+        const msg = `Hello, here is the academic progress report for ${studentReport.student.name} (${studentReport.student.usn}). Attendance: ${studentReport.overallAttendance}%, Total Marks: ${studentReport.totalMarksScored}/${studentReport.totalMaxMarks}. Please find the detailed report attached.`;
+        window.open(`https://wa.me/${studentReport.student.parentNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+      }
+    });
+  };
   useEffect(() => {
     const sample = getSampleReports(customSubjects);
     const reportsWithLogos = sample.map((r) => ({ ...r, logos, institutionInfo: config.institutionInfo }));
@@ -373,24 +394,46 @@ export default function App() {
                     : 'bg-white hover:bg-slate-50 border-slate-200/80 text-slate-700'
                 }`}
               >
-                <div className="flex items-center justify-between gap-1">
-                  <p className={`text-xs font-mono font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
-                    {r.student.usn}
-                  </p>
-                  <span
-                    className={`text-[10px] font-mono px-1 py-0.2 rounded font-bold ${
-                      isSelected
-                        ? 'bg-blue-700 text-blue-100'
-                        : isWarningAttd
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-slate-100 text-slate-700'
-                    }`}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudentIds.has(r.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleStudentSelection(r.id);
+                    }}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                  <div
+                    className="flex-1 flex items-center justify-between gap-1"
+                    onClick={() => {
+                      setSelectedStudentId(r.id);
+                      if (activeTab === 'upload') setActiveTab('preview');
+                      setIsMobileSidebarOpen(false);
+                    }}
                   >
-                    {r.overallAttendance}%
-                  </span>
+                    <p className={`text-xs font-mono font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                      {r.student.usn}
+                    </p>
+                    <span
+                      className={`text-[10px] font-mono px-1 py-0.2 rounded font-bold ${
+                        isSelected
+                          ? 'bg-blue-700 text-blue-100'
+                          : isWarningAttd
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {r.overallAttendance}%
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-1 mt-0.5">
+                <div className="flex items-center justify-between gap-1 mt-0.5" onClick={() => {
+                    setSelectedStudentId(r.id);
+                    if (activeTab === 'upload') setActiveTab('preview');
+                    setIsMobileSidebarOpen(false);
+                }}>
                   <p className={`text-[10px] truncate italic ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>
                     {r.student.name}
                   </p>
@@ -430,7 +473,7 @@ export default function App() {
               <span>Import Sheet</span>
             </button>
             <button
-              onClick={() => downloadAllIndividualPdfsZip(filteredReports.length > 0 ? filteredReports : reports)}
+              onClick={() => downloadAllIndividualPdfsZip(filteredReports.length > 0 ? filteredReports : reports, config.attendanceWarningThreshold)}
               className="flex-1 py-1 px-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-medium flex items-center justify-center gap-1 truncate"
               title="Download all individual student PDF reports in a ZIP archive"
             >
@@ -686,39 +729,6 @@ export default function App() {
           {/* TAB 2: Batch All Reports View */}
           {activeTab === 'batch' && (
             <div className="w-full max-w-4xl mx-auto space-y-6">
-              {/* Batch Action Header Bar */}
-              <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30">
-                <div>
-                  <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-indigo-700" />
-                    All Student Academic Reports ({filteredReports.length})
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Continuous multi-page document view • Formatted with institutional header & signature blocks
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => downloadAllIndividualPdfsZip(filteredReports.length > 0 ? filteredReports : reports)}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
-                    title="Export all individual student PDF reports into a ZIP archive"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Download PDFs ZIP</span>
-                  </button>
-
-                  <button
-                    id="batch-view-download-all-btn"
-                    onClick={() => setIsDownloadModalOpen(true)}
-                    className="text-xs bg-blue-700 hover:bg-blue-800 text-white px-4 py-1.5 rounded-lg font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
-                    title="Open Download All formats dialog"
-                  >
-                    <Download className="w-3.5 h-3.5 text-blue-100" />
-                    <span>DOWNLOAD ALL ({filteredReports.length})</span>
-                  </button>
-                </div>
-              </div>
 
               {/* List of all printable student cards */}
               {filteredReports.map((report, idx) => (
@@ -747,6 +757,19 @@ export default function App() {
               <PlainTextView
                 reports={filteredReports.length > 0 ? filteredReports : reports}
                 selectedStudent={selectedStudent}
+                currentStudentIndex={currentStudentIndex}
+                onNext={() => {
+                  const reportsList = filteredReports.length > 0 ? filteredReports : reports;
+                  if (currentStudentIndex < reportsList.length - 1) {
+                    setSelectedStudentId(reportsList[currentStudentIndex + 1].id);
+                  }
+                }}
+                onPrev={() => {
+                  const reportsList = filteredReports.length > 0 ? filteredReports : reports;
+                  if (currentStudentIndex > 0) {
+                    setSelectedStudentId(reportsList[currentStudentIndex - 1].id);
+                  }
+                }}
               />
             </div>
           )}
