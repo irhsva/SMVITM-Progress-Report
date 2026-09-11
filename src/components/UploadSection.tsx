@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileSpreadsheet, Sparkles, Download, CheckCircle2, AlertCircle, RefreshCw, Layers, Plus, Trash2 } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, Sparkles, Download, CheckCircle2, AlertCircle, RefreshCw, Layers, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { parseExcelBuffer } from '../utils/excelParser';
 import { generateCustomExcelWorkbook, getSampleReports } from '../data/sampleExcelData';
 import { DEFAULT_SUBJECTS } from '../data/defaultSubjects';
@@ -108,8 +108,16 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
     e.preventDefault();
     if (!newCode.trim() || !newName.trim()) return;
 
+    const formattedCode = newCode.trim().toUpperCase();
+    
+    // Check for duplicate code if adding a new subject
+    if (!editingSubject && customSubjects.some(s => s.code === formattedCode)) {
+        setErrorMsg('Subject code already exists.');
+        return;
+    }
+
     const newSubject = {
-        code: newCode.trim().toUpperCase(),
+        code: formattedCode,
         name: newName.trim(),
         defaultMaxMarks: Number(newMaxMarks) || 25,
         isElective: newIsElective,
@@ -124,17 +132,23 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
     }
     
     onSubjectsChange(updated);
+    setErrorMsg(null);
     setNewCode('');
     setNewName('');
     setNewMaxMarks(25);
     setNewIsElective(false);
   };
 
-  const handleDeleteSubject = (code: string) => {
-    if (customSubjects.length <= 1) {
-      setErrorMsg('You must have at least one subject.');
-      return;
+  const moveSubject = (index: number, direction: 'up' | 'down') => {
+    const newSubjects = [...customSubjects];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < newSubjects.length) {
+      [newSubjects[index], newSubjects[targetIndex]] = [newSubjects[targetIndex], newSubjects[index]];
+      onSubjectsChange(newSubjects);
     }
+  };
+
+  const handleDeleteSubject = (code: string) => {
     const updated = customSubjects.filter((s) => s.code !== code);
     onSubjectsChange(updated);
   };
@@ -199,7 +213,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-800">Department Subjects Configuration</h3>
               <p className="text-xs text-slate-500">
-                Add, remove, or modify subject codes and names. The custom template and parser will automatically adapt to these subjects.
+                Add, remove, or modify subject codes and names. <span className="font-bold text-red-700">Note: You must re-upload your Excel file after any subject changes for them to take effect.</span>
               </p>
             </div>
             <button
@@ -212,7 +226,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
 
           {/* Current Subjects List */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-60 overflow-y-auto p-1">
-            {customSubjects.map((subj) => (
+            {customSubjects.map((subj, index) => (
               <div key={subj.code} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -229,6 +243,24 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
                   <p className="text-xs font-medium text-slate-900 mt-1 line-clamp-2">{subj.name}</p>
                 </div>
                 <div className="flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => moveSubject(index, 'up')}
+                      disabled={index === 0}
+                      className="text-slate-400 hover:text-slate-600 disabled:opacity-30 p-0.5 transition-colors"
+                      title="Move Up"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => moveSubject(index, 'down')}
+                      disabled={index === customSubjects.length - 1}
+                      className="text-slate-400 hover:text-slate-600 disabled:opacity-30 p-0.5 transition-colors"
+                      title="Move Down"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <button
                     onClick={() => startEditSubject(subj)}
                     className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
