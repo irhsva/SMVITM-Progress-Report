@@ -216,12 +216,23 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
                 Add, remove, or modify subject codes and names. <span className="font-bold text-red-700">Note: You must re-upload your Excel file after any subject changes for them to take effect.</span>
               </p>
             </div>
-            <button
-              onClick={handleResetSubjects}
-              className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded transition-colors"
-            >
-              Reset to AIML Defaults
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  localStorage.setItem('customSubjects', JSON.stringify(customSubjects));
+                  alert('Subject configuration saved successfully!');
+                }}
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleResetSubjects}
+                className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded transition-colors"
+              >
+                Reset to Defaults
+              </button>
+            </div>
           </div>
 
           {/* Current Subjects List */}

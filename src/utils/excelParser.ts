@@ -151,7 +151,13 @@ export function parseExcelBuffer(
 
     // Check if topCell has a subject code
     for (const [code, map] of subjectColMaps.entries()) {
-      if (topCell.includes(code.toUpperCase()) || topCell.includes(code.toUpperCase().replace('B', '')) || topCell.includes(map.name.toUpperCase().slice(0, 8))) {
+      const subjCode = code.toUpperCase();
+      // Match if topCell contains code (e.g. "BAI701"), or code without 'B' (e.g. "AI701"), or first 12 chars of name
+      if (
+        topCell.includes(subjCode) || 
+        topCell.includes(subjCode.replace('B', '')) || 
+        (map.name && topCell.includes(map.name.toUpperCase().slice(0, 12)))
+      ) {
         currentSubjectCode = code;
         if (map.startCol === -1) map.startCol = c;
         break;

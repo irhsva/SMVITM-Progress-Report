@@ -63,6 +63,32 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('customSubjects', JSON.stringify(customSubjects));
   }, [customSubjects]);
+
+  // When customSubjects changes, re-order subjects in reports
+  useEffect(() => {
+    if (reports.length === 0) return;
+    setReports(prev => prev.map(report => {
+      const newSubjectsList = customSubjects.map(subj => {
+        const existingSubj = report.subjects.find(s => s.code === subj.code);
+        return existingSubj || {
+          code: subj.code,
+          name: subj.name,
+          classHeld: '-',
+          classAttended: '-',
+          attendancePercentage: '-',
+          attendanceNum: null,
+          maxMarks: subj.defaultMaxMarks,
+          marksScored: '-',
+          marksNum: null,
+          remark: '',
+          isElective: !!subj.isElective,
+          electiveType: subj.electiveType,
+          isNotEnrolled: true,
+        };
+      });
+      return { ...report, subjects: newSubjectsList };
+    }));
+  }, [customSubjects]);
   const [logos, setLogos] = useState<LogoSettings>({
     leftPreset: 'sode',
     rightPreset: 'smvitm',
@@ -810,65 +836,49 @@ export default function App() {
                       <th className="p-2">#</th>
                       <th className="p-2">USN</th>
                       <th className="p-2">Student Name</th>
-                      <th className="p-2">Proctor</th>
-                      <th className="p-2 text-center font-mono">BAI701</th>
-                      <th className="p-2 text-center font-mono">BAD702</th>
-                      <th className="p-2 text-center font-mono">BAD703</th>
-                      <th className="p-2 text-center font-mono">BAD714B</th>
-                      <th className="p-2 text-center font-mono">BEC755A</th>
-                      <th className="p-2 text-center font-mono">BME755A</th>
-                      <th className="p-2 text-center font-mono">BAD786</th>
+                      {customSubjects.map(s => (
+                        <th key={s.code} className="p-2 text-center font-mono">{s.code}</th>
+                      ))}
                       <th className="p-2 text-center">Attd%</th>
                       <th className="p-2 text-center">Score</th>
                       <th className="p-2 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredReports.map((r, idx) => {
-                      const getSub = (code: string) => r.subjects.find((s) => s.code === code);
-                      const bai = getSub('BAI701');
-                      const bad2 = getSub('BAD702');
-                      const bad3 = getSub('BAD703');
-                      const bad4 = getSub('BAD714B');
-                      const bec = getSub('BEC755A');
-                      const bme = getSub('BME755A');
-                      const bad8 = getSub('BAD786');
-
-                      return (
-                        <tr key={r.id} className="hover:bg-slate-50">
-                          <td className="p-2 text-slate-400 font-mono">{idx + 1}</td>
-                          <td className="p-2 font-mono font-semibold text-slate-900">{r.student.usn}</td>
-                          <td className="p-2 font-medium text-slate-900">{r.student.name}</td>
-                          <td className="p-2 text-slate-600 truncate max-w-[110px]">{r.student.proctorName}</td>
-                          <td className="p-2 text-center font-mono">{bai?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono">{bad2?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono">{bad3?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono">{bad4?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono text-slate-500">{bec?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono text-slate-500">{bme?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono">{bad8?.marksScored || '-'}</td>
-                          <td className="p-2 text-center font-mono font-semibold">
-                            <span className={`${(r.overallAttendance || 0) < config.attendanceWarningThreshold ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>
-                              {r.overallAttendance}%
-                            </span>
-                          </td>
-                          <td className="p-2 text-center font-mono font-bold text-blue-700">
-                            {r.totalMarksScored}/{r.totalMaxMarks}
-                          </td>
-                          <td className="p-2 text-center">
-                            <button
-                              onClick={() => {
-                                setSelectedStudentId(r.id);
-                                setActiveTab('preview');
-                              }}
-                              className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold transition-colors"
-                            >
-                              Preview
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {filteredReports.map((r, idx) => (
+                      <tr key={r.id} className="hover:bg-slate-50">
+                        <td className="p-2 text-slate-400 font-mono">{idx + 1}</td>
+                        <td className="p-2 font-mono font-semibold text-slate-900">{r.student.usn}</td>
+                        <td className="p-2 font-medium text-slate-900">{r.student.name}</td>
+                        {customSubjects.map(s => {
+                          const subData = r.subjects.find(item => item.code === s.code);
+                          return (
+                            <td key={s.code} className="p-2 text-center font-mono">
+                              {subData?.marksScored || '-'}
+                            </td>
+                          );
+                        })}
+                        <td className="p-2 text-center font-mono font-semibold">
+                          <span className={`${(r.overallAttendance || 0) < config.attendanceWarningThreshold ? 'text-amber-700 font-bold' : 'text-slate-800'}`}>
+                            {r.overallAttendance}%
+                          </span>
+                        </td>
+                        <td className="p-2 text-center font-mono font-bold text-blue-700">
+                          {r.totalMarksScored}/{r.totalMaxMarks}
+                        </td>
+                        <td className="p-2 text-center">
+                          <button
+                            onClick={() => {
+                              setSelectedStudentId(r.id);
+                              setActiveTab('preview');
+                            }}
+                            className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[10px] font-bold transition-colors"
+                          >
+                            Preview
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

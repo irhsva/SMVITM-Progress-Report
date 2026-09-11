@@ -8,8 +8,20 @@ export const DEFAULT_SUBJECTS: SubjectDef[] = [
     isElective: false,
   },
   {
+    code: 'BAI701L',
+    name: 'Deep Learning and Reinforcement Learning Lab',
+    defaultMaxMarks: 25,
+    isElective: false,
+  },
+  {
     code: 'BAD702',
     name: 'Statistical Machine Learning for Data Science',
+    defaultMaxMarks: 25,
+    isElective: false,
+  },
+  {
+    code: 'BAD702L',
+    name: 'Statistical Machine Learning for Data Science Lab',
     defaultMaxMarks: 25,
     isElective: false,
   },
