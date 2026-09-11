@@ -13,7 +13,7 @@ export interface SubjectRecord {
   classAttended: number | string;
   attendancePercentage: string; // e.g. "85%" or "-" or "N/A"
   attendanceNum: number | null; // numeric for analytics/checks (0-100)
-  maxMarks: number; // default 50
+  maxMarks: number; // default 25
   marksScored: number | string; // e.g. 42 or "AB" or "N/A"
   marksNum: number | null; // numeric for analytics
   remark: string;
@@ -85,7 +85,7 @@ export interface ReportConfig {
   hodTitle: string; // "In-charge HOD, AI and DS"
   department: string; // "DEPARTMENT OF ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"
   autoRemarks: boolean;
-  passThresholdMarks: number; // default 20/50 (40%)
+  passThresholdMarks: number; // default 10/25 (40%)
   attendanceWarningThreshold: number; // default 75%
   logos?: LogoSettings;
   institutionInfo: InstitutionInfo;

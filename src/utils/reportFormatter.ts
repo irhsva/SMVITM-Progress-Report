@@ -95,7 +95,8 @@ export function formatWhatsAppMessage(report: StudentReport): string {
 
   report.subjects.forEach((s) => {
     if (s.isNotEnrolled) return;
-    lines.push(`• *${s.code}* (${s.name.slice(0, 22)}..): IA Marks: *${s.marksScored}/50* | Attd: *${s.attendancePercentage}* (${s.classAttended}/${s.classHeld})`);
+    const maxMarks = (typeof s.maxMarks === 'number' && s.maxMarks > 0 && s.maxMarks !== 50) ? s.maxMarks : 25;
+    lines.push(`• *${s.code}* (${s.name.slice(0, 22)}..): IA Marks: *${s.marksScored}/${maxMarks}* | Attd: *${s.attendancePercentage}* (${s.classAttended}/${s.classHeld})`);
   });
 
   lines.push(`━━━━━━━━━━━━━━━━━━━━━━`);

@@ -111,10 +111,10 @@ export const StudentFilterBar: React.FC<StudentFilterBarProps> = ({
                 ? 'bg-rose-600 text-white border-rose-700 shadow-sm'
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
             }`}
-            title="Show students with IA score < 20/50"
+            title="Show students with IA score < 10/25 (< 40%)"
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>Low IA (&lt;20)</span>
+            <span>Low IA (&lt;10)</span>
           </button>
         </div>
 

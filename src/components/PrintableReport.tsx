@@ -246,7 +246,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
                       {isNotEnrolled ? '-' : sub.attendancePercentage}
                     </td>
                     <td className="p-1.5 sm:p-2 text-center align-middle font-mono">
-                      {isNotEnrolled ? '-' : (sub.maxMarks ?? 50)}
+                      {isNotEnrolled ? '-' : (sub.maxMarks ?? 25)}
                     </td>
                     <td
                       className={`p-1.5 sm:p-2 text-center align-middle font-mono font-bold ${

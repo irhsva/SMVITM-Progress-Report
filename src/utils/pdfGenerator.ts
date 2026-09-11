@@ -473,7 +473,7 @@ export function buildStudentReportPdf(
   const tableBody = report.subjects.map((sub, idx) => {
     const isNotEnrolled = sub.isNotEnrolled;
     const isLowAtt = typeof sub.attendancePercentage === 'number' && sub.attendancePercentage < attendanceWarningThreshold && !isNotEnrolled;
-    const isLowMarks = typeof sub.marksScored === 'number' && sub.marksScored < (sub.maxMarks ?? 50) * 0.4 && !isNotEnrolled;
+    const isLowMarks = typeof sub.marksScored === 'number' && sub.marksScored < (sub.maxMarks ?? 25) * 0.4 && !isNotEnrolled;
 
     return [
       { content: String(idx + 1), styles: { halign: 'center' as const } },
@@ -491,7 +491,7 @@ export function buildStudentReportPdf(
           textColor: isLowAtt ? ([185, 28, 28] as [number, number, number]) : ([15, 23, 42] as [number, number, number]),
         },
       },
-      { content: isNotEnrolled ? '-' : String(sub.maxMarks ?? 50), styles: { halign: 'center' as const } },
+      { content: isNotEnrolled ? '-' : String(sub.maxMarks ?? 25), styles: { halign: 'center' as const } },
       {
         content: isNotEnrolled ? '-' : String(sub.marksScored ?? '-'),
         styles: {
@@ -1044,7 +1044,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   const lowMarksStudents: { name: string; usn: string; proctor: string; subjectCode: string; subjectName: string; marks: number }[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < (s.maxMarks ?? 50) * 0.4) {
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < (s.maxMarks ?? 25) * 0.4) {
         lowMarksStudents.push({
           name: r.student.name,
           usn: r.student.usn,
@@ -1097,7 +1097,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
         entry.totalMarks += s.marksNum;
         if (entry.maxMarks === -1 || s.marksNum > entry.maxMarks) entry.maxMarks = s.marksNum;
         if (entry.minMarks === 999 || s.marksNum < entry.minMarks) entry.minMarks = s.marksNum;
-        if (s.marksNum >= (s.maxMarks ?? 50) * 0.4) entry.passCount++;
+        if (s.marksNum >= (s.maxMarks ?? 25) * 0.4) entry.passCount++;
       }
       if (s.attendanceNum !== null && s.attendanceNum !== undefined) {
         entry.totalAttd += s.attendanceNum;

@@ -129,7 +129,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             {avgClassMarks}%
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">
-            Class Average ({Math.round(avgClassMarks * 0.5)}/50 marks)
+            Class Average ({((avgClassMarks * 25) / 100).toFixed(1)}/25 marks)
           </div>
         </div>
 
