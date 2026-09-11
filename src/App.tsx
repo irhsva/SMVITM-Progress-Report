@@ -55,7 +55,14 @@ export default function App() {
   const [filterLowMarks, setFilterLowMarks] = useState(false);
   const [sortBy, setSortBy] = useState<'usn' | 'name' | 'attendance' | 'marks'>('usn');
   const [config, setConfig] = useState<ReportConfig>(DEFAULT_CONFIG);
-  const [customSubjects, setCustomSubjects] = useState<SubjectDef[]>(DEFAULT_SUBJECTS);
+  const [customSubjects, setCustomSubjects] = useState<SubjectDef[]>(() => {
+    const saved = localStorage.getItem('customSubjects');
+    return saved ? JSON.parse(saved) : DEFAULT_SUBJECTS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('customSubjects', JSON.stringify(customSubjects));
+  }, [customSubjects]);
   const [logos, setLogos] = useState<LogoSettings>({
     leftPreset: 'sode',
     rightPreset: 'smvitm',
