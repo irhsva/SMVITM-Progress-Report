@@ -511,41 +511,45 @@ export function downloadAnalyticsExcel(reports: StudentReport[], filename = 'SMV
     const maxVal = data.maxMarks === -1 ? 'N/A' : data.maxMarks;
     const minVal = data.minMarks === 999 ? 'N/A' : data.minMarks;
 
+    const passThreshold = 10; // 40% of standard 25
     subjectRows.push({
       'Subject Code': code,
       'Subject Title': data.name,
       'Total Enrolled': data.enrolled,
-      'Max Marks (50)': maxVal,
-      'Min Marks (50)': minVal,
+      'Max Marks Recorded': maxVal,
+      'Min Marks Recorded': minVal,
       'Average Marks': avgMarks,
       'Average Attendance %': `${avgAttd}%`,
-      'Pass Rate % (>=20)': `${passRate}%`,
+      'Pass Rate %': `${passRate}%`,
     });
   });
 
   const subWs = XLSX.utils.json_to_sheet(subjectRows);
   XLSX.utils.book_append_sheet(wb, subWs, 'Subject_Performance_Stats');
 
-  // 2. IA-1 Defaulters (< 20 Marks) Sheet
+  // 2. Low Marks Defaulters Sheet
   const lowMarksRows: Record<string, unknown>[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < 20) {
+      const passCutoff = Math.round(s.maxMarks * 0.4);
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < passCutoff) {
         lowMarksRows.push({
           'USN': r.student.usn,
           'Student Name': r.student.name,
           'Proctor Name': r.student.proctorName,
           'Subject Code': s.code,
           'Subject Title': s.name,
-          'Marks Scored (Max 50)': s.marksNum,
-          'Deficit': 20 - s.marksNum,
+          'Marks Scored': s.marksNum,
+          'Max Marks': s.maxMarks,
+          'Threshold (40%)': passCutoff,
+          'Deficit': passCutoff - s.marksNum,
         });
       }
     });
   });
 
   const lowMarksWs = XLSX.utils.json_to_sheet(lowMarksRows);
-  XLSX.utils.book_append_sheet(wb, lowMarksWs, 'IA1_Defaulters_Below_20');
+  XLSX.utils.book_append_sheet(wb, lowMarksWs, 'Defaulters_Below_40_Pct');
 
   // 3. Attendance Shortage (< 75%) Sheet
   const lowAttdRows: Record<string, unknown>[] = [];

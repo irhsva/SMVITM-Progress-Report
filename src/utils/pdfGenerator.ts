@@ -16,63 +16,81 @@ const logoCache = new Map<string, string>();
 export function getPresetSvg(preset: LogoPreset): string {
   switch (preset) {
     case 'sode':
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 200 200">
-        <rect width="200" height="200" fill="#ffffff"/>
-        <!-- Outer Gold Rings -->
-        <circle cx="100" cy="100" r="97" fill="#ffffff" stroke="#c89d42" stroke-width="2.2" />
-        <circle cx="100" cy="100" r="92.5" fill="none" stroke="#c89d42" stroke-width="1" stroke-dasharray="2.5 1.5" />
-        <circle cx="100" cy="100" r="67.5" fill="none" stroke="#c89d42" stroke-width="1.6" />
+      return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="500" height="500" viewBox="0 0 500 500">
+        <rect width="500" height="500" fill="#ffffff"/>
+        <!-- Outer & Inner Golden Rings -->
+        <circle cx="250" cy="250" r="236" fill="#ffffff" stroke="#C59341" stroke-width="3"/>
+        <circle cx="250" cy="250" r="226" fill="none" stroke="#C59341" stroke-width="1.2"/>
+        <circle cx="250" cy="250" r="162" fill="none" stroke="#C59341" stroke-width="1.5"/>
 
         <defs>
-          <path id="sodePdfTopArcRef" d="M 20,100 A 80,80 0 1,1 180,100" fill="none" />
-          <path id="sodePdfBottomArcRef" d="M 176,100 A 80,80 0 0,1 24,100" fill="none" />
+          <path id="sodePdfTopArcRef" d="M 58,250 A 192,192 0 1,1 442,250" fill="none" />
+          <path id="sodePdfBottomArcRef" d="M 125,385 A 196,196 0 0,0 375,385" fill="none" />
         </defs>
 
-        <!-- Top Arc Text -->
-        <text font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="800" fill="#7a182b" letter-spacing="1.2">
-          <textPath href="#sodePdfTopArcRef" startOffset="50%" text-anchor="middle">
+        <!-- Top Arc Text: SODE GROUP OF INSTITUTIONS -->
+        <text font-family="'Times New Roman', Georgia, serif" font-size="28" font-weight="700" fill="#6E1B2C" letter-spacing="2.5">
+          <textPath href="#sodePdfTopArcRef" xlink:href="#sodePdfTopArcRef" startOffset="50%" text-anchor="middle">
             SODE GROUP OF INSTITUTIONS
           </textPath>
         </text>
 
-        <!-- Flanking Gold Dots -->
-        <circle cx="36" cy="144" r="4.2" fill="#c89d42" />
-        <circle cx="164" cy="144" r="4.2" fill="#c89d42" />
+        <!-- Flanking Golden Solid Dots -->
+        <circle cx="108" cy="378" r="11" fill="#C59341" />
+        <circle cx="392" cy="378" r="11" fill="#C59341" />
 
         <!-- Bottom Arc Text: UDUPI -->
-        <text font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" fill="#7a182b" letter-spacing="3">
-          <textPath href="#sodePdfBottomArcRef" startOffset="50%" text-anchor="middle">
+        <text font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#6E1B2C" letter-spacing="4">
+          <textPath href="#sodePdfBottomArcRef" xlink:href="#sodePdfBottomArcRef" startOffset="50%" text-anchor="middle">
             UDUPI
           </textPath>
         </text>
 
-        <!-- Inner Golden Concentric Rays -->
-        <g stroke="#c89d42" stroke-width="1" fill="none" opacity="0.8">
-          <ellipse cx="100" cy="100" rx="18" ry="18" />
-          <ellipse cx="100" cy="100" rx="28" ry="28" />
-          <ellipse cx="100" cy="100" rx="38" ry="38" />
-          <ellipse cx="100" cy="100" rx="48" ry="48" />
-          <ellipse cx="100" cy="100" rx="58" ry="58" />
+        <!-- Golden Concentric Arcs behind lotus -->
+        <g stroke="#C59341" stroke-width="1.5" fill="none" opacity="0.85">
+          <path d="M 152,240 A 120,120 0 0,1 348,240" />
+          <path d="M 166,206 A 140,140 0 0,1 334,206" />
+          <path d="M 185,174 A 155,155 0 0,1 315,174" />
+          <path d="M 210,146 A 170,170 0 0,1 290,146" />
         </g>
 
-        <!-- Sun at top center -->
-        <circle cx="100" cy="58" r="6.5" fill="#c89d42" />
-        <circle cx="100" cy="58" r="4" fill="#7a182b" />
-
-        <!-- Interlocking Maroon Lotus Flower Petals -->
-        <g stroke="#7a182b" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" fill="none">
-          <path d="M100 68 L114 86 L100 112 L86 86 Z" fill="#ffffff" fill-opacity="0.6" />
-          <path d="M68 84 L88 72 L103 98 L83 112 Z" />
-          <path d="M132 84 L112 72 L97 98 L117 112 Z" />
-          <path d="M62 98 C62 116 80 125 100 123 C76 117 72 96 70 84" />
-          <path d="M138 98 C138 116 120 125 100 123 C124 117 128 96 130 84" />
-          <path d="M78 98 C88 120 112 120 122 98" />
-          <path d="M86 108 C93 122 107 122 114 108" />
+        <!-- Top Sunburst -->
+        <g transform="translate(250, 142)">
+          <circle cx="0" cy="0" r="23" fill="none" stroke="#C59341" stroke-width="1.2"/>
+          <g fill="#6E1B2C">
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(0)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(22.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(45)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(67.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(90)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(112.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(135)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(157.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(180)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(202.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(225)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(247.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(270)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(292.5)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(315)"/>
+            <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(337.5)"/>
+            <circle cx="0" cy="0" r="15" />
+          </g>
         </g>
 
-        <!-- Sanskrit Motto -->
-        <text x="100" y="132" text-anchor="middle" font-family="Arial, sans-serif" font-size="6.5" font-weight="bold" fill="#ab8130" letter-spacing="0.6">
-          सर्वे भवन्तु सुखिनः
+        <!-- Central Lotus Motif in Deep Maroon -->
+        <g stroke="#6E1B2C" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <path d="M 250,176 C 262,205 278,235 292,260 C 275,295 260,330 250,370 C 240,330 225,295 208,260 C 222,235 238,205 250,176 Z" />
+          <path d="M 250,176 C 228,210 196,242 165,268 C 190,300 220,335 250,370" />
+          <path d="M 250,176 C 272,210 304,242 335,268 C 310,300 280,335 250,370" />
+          <path d="M 148,284 C 130,315 135,348 152,368 C 175,372 215,355 250,318 C 215,265 178,235 152,210 C 182,215 220,240 250,285" />
+          <path d="M 352,284 C 370,315 365,348 348,368 C 325,372 285,355 250,318 C 285,265 322,235 348,210 C 318,215 280,240 250,285" />
+          <path d="M 152,368 C 185,395 220,395 250,370 C 280,395 315,395 348,368" />
+        </g>
+
+        <!-- Sanskrit Motto: सर्वे भद्राणि पश्यन्तु -->
+        <text x="250" y="382" text-anchor="middle" font-family="'Arial Unicode MS', Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#AC7D30" letter-spacing="0.8">
+          सर्वे भद्राणि पश्यन्तु
         </text>
       </svg>`;
 
@@ -233,9 +251,15 @@ export async function getResolvedLogoDataUrl(
 
   const effectivePreset = preset === 'custom' ? defaultPreset : preset;
   
-  // Use custom image loading for default institutional presets
-  if (effectivePreset === 'sode') return await loadCustomImageDataUrl('/smvitm_left.jpg');
-  if (effectivePreset === 'smvitm') return await loadCustomImageDataUrl('/smvitm_right.jpg');
+  // Use custom image loading for default institutional presets with fallback to vector SVG
+  if (effectivePreset === 'sode') {
+    const data = await loadCustomImageDataUrl('/smvitm_left.jpg');
+    if (data) return data;
+  }
+  if (effectivePreset === 'smvitm') {
+    const data = await loadCustomImageDataUrl('/smvitm_right.jpg');
+    if (data) return data;
+  }
 
   if (logoCache.has(effectivePreset)) {
     return logoCache.get(effectivePreset)!;

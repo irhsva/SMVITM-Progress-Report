@@ -164,42 +164,114 @@ export const SAMPLE_STUDENTS_RAW = [
 export function getSampleReports(customSubjects: SubjectDef[] = DEFAULT_SUBJECTS): StudentReport[] {
   return SAMPLE_STUDENTS_RAW.map((s) => {
     const subjects = customSubjects.map((subj, idx) => {
-      // map to sample raw data keys if available, or generate default values
-      const rawKeyMap = ['bai701', 'bad702', 'bad703', 'bad714b', 'bec755a', 'bme755a', 'bad786'];
-      const rawKey = rawKeyMap[idx % rawKeyMap.length];
-      const dataObj = (s as any)[rawKey] || { ch: 24, ca: 20, marks: 38 };
+      const codeUpper = subj.code.toUpperCase();
+      const isLab = codeUpper.endsWith('L') || subj.name.toLowerCase().includes('lab') || subj.name.toLowerCase().includes('practical');
+      const isProject = codeUpper.includes('786') || subj.name.toLowerCase().includes('project');
 
-      const ch = dataObj.ch;
-      const ca = dataObj.ca;
-      const marks = dataObj.marks;
-      const isNotEnrolled = subj.isElective && ch === 0 && (marks === null || marks === undefined);
+      // Check open elective mutual exclusivity
+      let isNotEnrolled = false;
+      if (codeUpper === 'BME755A' && s.bec755a && s.bec755a.marks !== null && s.bec755a.marks !== undefined && s.bec755a.marks > 0) {
+        isNotEnrolled = true;
+      } else if (codeUpper === 'BEC755A' && s.bme755a && s.bme755a.marks !== null && s.bme755a.marks !== undefined && s.bme755a.marks > 0) {
+        isNotEnrolled = true;
+      }
 
-      const attdNum = ch > 0 ? Math.round((ca / ch) * 100) : null;
-      const marksNum = marks !== null && marks !== undefined ? marks : null;
+      let ch = 24;
+      let ca = 22;
+      let marksNum: number | null = null;
+
+      if (isNotEnrolled) {
+        return {
+          code: subj.code,
+          name: subj.name,
+          classHeld: '-',
+          classAttended: '-',
+          attendancePercentage: 'N/A',
+          attendanceNum: null,
+          maxMarks: subj.defaultMaxMarks,
+          marksScored: 'N/A',
+          marksNum: null,
+          remark: 'Not Enrolled',
+          isElective: !!subj.isElective,
+          electiveType: subj.electiveType,
+          isNotEnrolled: true,
+        };
+      }
+
+      if (isLab) {
+        ch = 6;
+        ca = 6;
+        marksNum = subj.defaultMaxMarks;
+      } else if (isProject) {
+        ch = 16;
+        ca = 16;
+        marksNum = subj.defaultMaxMarks;
+      } else {
+        const rawKeyMap = ['bai701', 'bad702', 'bad703', 'bad714b', 'bec755a', 'bme755a', 'bad786'];
+        const rawKey = rawKeyMap[idx % rawKeyMap.length];
+        const dataObj = (s as any)[rawKey] || { ch: 24, ca: 20, marks: 38 };
+
+        if (subj.isElective && dataObj.ch === 0 && (dataObj.marks === null || dataObj.marks === undefined)) {
+          return {
+            code: subj.code,
+            name: subj.name,
+            classHeld: '-',
+            classAttended: '-',
+            attendancePercentage: 'N/A',
+            attendanceNum: null,
+            maxMarks: subj.defaultMaxMarks,
+            marksScored: 'N/A',
+            marksNum: null,
+            remark: 'Not Enrolled',
+            isElective: !!subj.isElective,
+            electiveType: subj.electiveType,
+            isNotEnrolled: true,
+          };
+        }
+
+        ch = dataObj.ch ?? 24;
+        ca = dataObj.ca ?? 20;
+        if (dataObj.marks !== null && dataObj.marks !== undefined) {
+          marksNum = Math.min(subj.defaultMaxMarks, Math.round((dataObj.marks / 50) * subj.defaultMaxMarks));
+        }
+      }
+
+      const attdNum = ch > 0 ? Math.round((ca / ch) * 100) : 100;
+      const passMark = subj.defaultMaxMarks * 0.4;
+      const excMark = subj.defaultMaxMarks * 0.8;
+      const remark =
+        marksNum !== null
+          ? marksNum >= excMark
+            ? 'Excellent'
+            : marksNum >= passMark
+            ? 'Satisfactory'
+            : 'Needs Improvement'
+          : '';
 
       return {
         code: subj.code,
         name: subj.name,
-        classHeld: isNotEnrolled ? '-' : (ch > 0 ? ch : '-'),
-        classAttended: isNotEnrolled ? '-' : (ca > 0 ? ca : '-'),
-        attendancePercentage: attdNum !== null ? `${attdNum}%` : (isNotEnrolled ? 'N/A' : '-'),
+        classHeld: ch > 0 ? ch : '-',
+        classAttended: ca > 0 ? ca : '-',
+        attendancePercentage: `${attdNum}%`,
         attendanceNum: attdNum,
         maxMarks: subj.defaultMaxMarks,
-        marksScored: marksNum !== null ? marksNum : (isNotEnrolled ? 'N/A' : '-'),
+        marksScored: marksNum !== null ? marksNum : '-',
         marksNum,
-        remark: marksNum !== null ? (marksNum >= 40 ? 'Excellent' : marksNum >= 20 ? 'Satisfactory' : 'Needs Improvement') : '',
-        isElective: subj.isElective,
+        remark,
+        isElective: !!subj.isElective,
         electiveType: subj.electiveType,
-        isNotEnrolled,
+        isNotEnrolled: false,
       };
     });
 
     const enrolledSubjects = subjects.filter((sub) => !sub.isNotEnrolled);
     const totalMarks = enrolledSubjects.reduce((acc, sub) => acc + (sub.marksNum || 0), 0);
     const totalMax = enrolledSubjects.reduce((acc, sub) => acc + sub.maxMarks, 0);
-    const avgAttd = enrolledSubjects.length > 0
-      ? Math.round(enrolledSubjects.reduce((acc, sub) => acc + (sub.attendanceNum || 0), 0) / enrolledSubjects.length)
-      : 0;
+    const avgAttd =
+      enrolledSubjects.length > 0
+        ? Math.round(enrolledSubjects.reduce((acc, sub) => acc + (sub.attendanceNum || 0), 0) / enrolledSubjects.length)
+        : 0;
 
     return {
       id: s.usn,
@@ -270,11 +342,32 @@ export function generateCustomExcelWorkbook(subjects: SubjectDef[] = DEFAULT_SUB
       (s as any).parentNumber || '+91 XXXXXXXXXX',
     ];
     subjects.forEach((subj, sIdx) => {
-      const rawKeyMap = ['bai701', 'bad702', 'bad703', 'bad714b', 'bec755a', 'bme755a', 'bad786'];
-      const rawKey = rawKeyMap[sIdx % rawKeyMap.length];
-      const dataObj = (s as any)[rawKey] || { ch: 24, ca: 20, marks: 38 };
-      const pct = dataObj.ch > 0 ? `${Math.round((dataObj.ca / dataObj.ch) * 100)}%` : 'N/A';
-      rowData.push(dataObj.marks ?? '', dataObj.ch || '', dataObj.ca || '', pct);
+      const codeUpper = subj.code.toUpperCase();
+      const isLab = codeUpper.endsWith('L') || subj.name.toLowerCase().includes('lab') || subj.name.toLowerCase().includes('practical');
+      const isProject = codeUpper.includes('786') || subj.name.toLowerCase().includes('project');
+
+      if (isLab) {
+        rowData.push(subj.defaultMaxMarks, 6, 6, '100%');
+      } else if (isProject) {
+        rowData.push(subj.defaultMaxMarks, 16, 16, '100%');
+      } else if (codeUpper === 'BME755A' && s.bec755a && s.bec755a.marks !== null && s.bec755a.marks !== undefined && s.bec755a.marks > 0) {
+        rowData.push('', '', '', 'N/A');
+      } else if (codeUpper === 'BEC755A' && s.bme755a && s.bme755a.marks !== null && s.bme755a.marks !== undefined && s.bme755a.marks > 0) {
+        rowData.push('', '', '', 'N/A');
+      } else {
+        const rawKeyMap = ['bai701', 'bad702', 'bad703', 'bad714b', 'bec755a', 'bme755a', 'bad786'];
+        const rawKey = rawKeyMap[sIdx % rawKeyMap.length];
+        const dataObj = (s as any)[rawKey] || { ch: 24, ca: 20, marks: 38 };
+        if (subj.isElective && dataObj.ch === 0 && (dataObj.marks === null || dataObj.marks === undefined)) {
+          rowData.push('', '', '', 'N/A');
+        } else {
+          const scaledMarks = dataObj.marks !== null && dataObj.marks !== undefined
+            ? Math.min(subj.defaultMaxMarks, Math.round((dataObj.marks / 50) * subj.defaultMaxMarks))
+            : '';
+          const pct = dataObj.ch > 0 ? `${Math.round((dataObj.ca / dataObj.ch) * 100)}%` : 'N/A';
+          rowData.push(scaledMarks, dataObj.ch || '', dataObj.ca || '', pct);
+        }
+      }
     });
     rows.push(rowData);
   });

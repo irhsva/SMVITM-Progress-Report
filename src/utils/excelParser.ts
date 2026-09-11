@@ -108,11 +108,12 @@ export function parseExcelBuffer(
     caCol: number;
     attdPctCol: number;
     iaMarksCol: number;
+    detectedMaxMarks?: number;
   }
 
   const subjectColMaps: Map<string, SubjectColMap> = new Map();
 
-  // Initialize for all subjects
+  // Initialize for all configured subjects
   subjectsToUse.forEach((subj) => {
     subjectColMaps.set(subj.code, {
       code: subj.code,
@@ -123,14 +124,13 @@ export function parseExcelBuffer(
       caCol: -1,
       attdPctCol: -1,
       iaMarksCol: -1,
+      detectedMaxMarks: subj.defaultMaxMarks,
     });
   });
 
-  // Scan top header for known columns and subjects
-  const maxCols = Math.max(topHeader.length, subHeader.length);
+  const maxCols = Math.max(topHeader.length, subHeader.length, thirdHeader.length);
 
-  let currentSubjectCode: string | null = null;
-
+  // 1. Scan headers for student meta columns (USN, Name, Proctor, Parent)
   for (let c = 0; c < maxCols; c++) {
     const topCell = cleanStr(topHeader[c]).toUpperCase();
     const subCell = cleanStr(subHeader[c]).toUpperCase();
@@ -139,57 +139,195 @@ export function parseExcelBuffer(
 
     if (topCell.includes('USN') || subCell === 'USN') {
       usnCol = c;
-    } else if ((topCell.includes('NAME') || subCell === 'NAME') && !topCell.includes('PROCTOR') && !subCell.includes('PROCTOR') && !topCell.includes('SUBJECT') && !topCell.includes('PARENT')) {
-      nameCol = c;
-    } else if (combinedCell.includes('PROCTOR NAME') || (combinedCell.includes('PROCTOR') && !combinedCell.includes('NO') && !combinedCell.includes('NUM') && !combinedCell.includes('PHONE') && !combinedCell.includes('MOB'))) {
+    } else if (
+      (topCell.includes('NAME') || subCell === 'NAME') &&
+      !combinedCell.includes('PROCTOR') &&
+      !combinedCell.includes('SUBJECT') &&
+      !combinedCell.includes('PARENT') &&
+      !combinedCell.includes('FACULTY')
+    ) {
+      if (nameCol === -1) nameCol = c;
+    } else if (
+      combinedCell.includes('PROCTOR NAME') ||
+      (combinedCell.includes('PROCTOR') &&
+        !combinedCell.includes('NO') &&
+        !combinedCell.includes('NUM') &&
+        !combinedCell.includes('PHONE') &&
+        !combinedCell.includes('MOB') &&
+        !combinedCell.includes('CONTACT'))
+    ) {
       proctorNameCol = c;
-    } else if (combinedCell.includes('PROCTOR NO') || combinedCell.includes('PROCTOR NUM') || combinedCell.includes('PROCTOR MOB') || combinedCell.includes('PROCTOR PHONE') || combinedCell.includes('CONTACT') && !combinedCell.includes('PARENT')) {
+    } else if (
+      combinedCell.includes('PROCTOR NO') ||
+      combinedCell.includes('PROCTOR NUM') ||
+      combinedCell.includes('PROCTOR MOB') ||
+      combinedCell.includes('PROCTOR PHONE') ||
+      (combinedCell.includes('CONTACT') && !combinedCell.includes('PARENT'))
+    ) {
       proctorNumCol = c;
-    } else if (combinedCell.includes('PARENT') || combinedCell.includes('PHONE') || combinedCell.includes('MOBILE')) {
+    } else if (combinedCell.includes('PARENT') || combinedCell.includes('FATHER') || combinedCell.includes('MOTHER')) {
       parentNumCol = c;
-    }
-
-    // Check if topCell has a subject code
-    for (const [code, map] of subjectColMaps.entries()) {
-      const subjCode = code.toUpperCase();
-      // Match if topCell contains code (e.g. "BAI701"), or code without 'B' (e.g. "AI701"), or first 12 chars of name
-      if (
-        topCell.includes(subjCode) || 
-        topCell.includes(subjCode.replace('B', '')) || 
-        (map.name && topCell.includes(map.name.toUpperCase().slice(0, 12)))
-      ) {
-        currentSubjectCode = code;
-        if (map.startCol === -1) map.startCol = c;
-        break;
-      }
-    }
-
-    // If currentSubjectCode is active, assign subcolumns
-    if (currentSubjectCode && subjectColMaps.has(currentSubjectCode)) {
-      const map = subjectColMaps.get(currentSubjectCode)!;
-      map.endCol = c;
-
-      if (subCell === 'CH' || subCell.includes('HELD') || combinedCell.includes('CLASS HELD')) {
-        map.chCol = c;
-      } else if (subCell === 'CA' || subCell.includes('ATTENDED') || combinedCell.includes('CLASS ATTENDED')) {
-        map.caCol = c;
-      } else if (subCell.includes('%') || subCell.includes('ATTD') || subCell.includes('ATTENDANCE') || combinedCell.includes('ATTENDANCE %')) {
-        map.attdPctCol = c;
-      } else if (subCell.includes('IA') || subCell.includes('MARKS') || subCell.includes('TEST') || subCell.includes('SCORE') || combinedCell.includes('IA1') || combinedCell.includes('IA-1')) {
-        map.iaMarksCol = c;
-      }
     }
   }
 
-  // If specific subject columns weren't resolved by exact subCell match, attempt fallback column grouping
-  subjectColMaps.forEach((map) => {
-    if (map.startCol !== -1) {
-      if (map.iaMarksCol === -1 && map.startCol < maxCols) map.iaMarksCol = map.startCol;
-      if (map.chCol === -1 && map.startCol + 1 < maxCols) map.chCol = map.startCol + 1;
-      if (map.caCol === -1 && map.startCol + 2 < maxCols) map.caCol = map.startCol + 2;
-      if (map.attdPctCol === -1 && map.startCol + 3 < maxCols) map.attdPctCol = map.startCol + 3;
+  // 2. Identify Subject Header Column Clusters
+  // Helper to score how well a header text matches a configured SubjectDef
+  function scoreSubjectMatch(text: string, subj: SubjectDef): number {
+    const norm = text.toUpperCase().trim();
+    if (!norm) return -100;
+
+    const codeUpper = subj.code.toUpperCase();
+    const nameUpper = subj.name.toUpperCase();
+    const isLabText = norm.includes('LAB') || norm.includes('PRACTICAL') || /\bL\b/.test(norm);
+    const isLabSubj = codeUpper.endsWith('L') || nameUpper.includes('LAB') || nameUpper.includes('PRACTICAL');
+
+    let score = 0;
+
+    // Direct exact code match e.g. "BAI701L" or "BAI701"
+    if (norm.includes(codeUpper)) {
+      score += 100;
+    } else {
+      // Base code match (e.g. "BAI701" when subject code is "BAI701L")
+      const baseCode = codeUpper.replace(/L$/, '');
+      if (baseCode.length >= 4 && (norm.includes(baseCode) || norm.includes(baseCode.replace('B', '')))) {
+        score += 60;
+      }
     }
-  });
+
+    // Theory vs Lab alignment
+    if (isLabText && isLabSubj) {
+      score += 60;
+    } else if (!isLabText && !isLabSubj) {
+      score += 30;
+    } else {
+      // Harsh penalty if one is Lab and other is Theory
+      score -= 100;
+    }
+
+    // Meaningful words from name
+    const words = nameUpper.split(/[\s,()\-]+/).filter((w) => w.length >= 4 && w !== 'DATA' && w !== 'SCIENCE');
+    let matchedWordCount = 0;
+    for (const w of words) {
+      if (norm.includes(w)) matchedWordCount++;
+    }
+    if (matchedWordCount > 0) {
+      score += matchedWordCount * 15;
+    }
+
+    return score;
+  }
+
+  // Find subject starting columns across topHeader and subHeader
+  const assignedCodes = new Set<string>();
+  const subjectPositions: { code: string; startCol: number }[] = [];
+
+  for (let c = 0; c < maxCols; c++) {
+    const topCell = cleanStr(topHeader[c]);
+    const subCell = cleanStr(subHeader[c]);
+    const headerStr = topCell || subCell;
+
+    if (!headerStr || headerStr.length < 3) continue;
+
+    // Skip known meta columns
+    if (c === usnCol || c === nameCol || c === proctorNameCol || c === proctorNumCol || c === parentNumCol) continue;
+    const upperH = headerStr.toUpperCase();
+    if (upperH.includes('SL NO') || upperH.includes('USN') || upperH.includes('PROCTOR') || upperH.includes('PARENT')) continue;
+
+    // Find best matching subject that hasn't been assigned yet
+    let bestSubj: SubjectDef | null = null;
+    let bestScore = 0;
+
+    for (const subj of subjectsToUse) {
+      if (assignedCodes.has(subj.code)) continue;
+      const score = scoreSubjectMatch(headerStr, subj);
+      if (score > bestScore && score >= 40) {
+        bestScore = score;
+        bestSubj = subj;
+      }
+    }
+
+    if (bestSubj) {
+      assignedCodes.add(bestSubj.code);
+      subjectPositions.push({ code: bestSubj.code, startCol: c });
+      const map = subjectColMaps.get(bestSubj.code)!;
+      map.startCol = c;
+    }
+  }
+
+  // Positional fallback: if some subjects from subjectsToUse weren't matched by text,
+  // check if there are 4-column blocks following the meta columns
+  if (subjectPositions.length === 0) {
+    // Start after the last meta column (typically col 6)
+    const firstDataCol = Math.max(usnCol, nameCol, proctorNameCol, proctorNumCol, parentNumCol, 5) + 1;
+    let currCol = firstDataCol;
+    subjectsToUse.forEach((subj) => {
+      if (currCol < maxCols) {
+        const map = subjectColMaps.get(subj.code)!;
+        map.startCol = currCol;
+        subjectPositions.push({ code: subj.code, startCol: currCol });
+        currCol += 4;
+      }
+    });
+  } else if (subjectPositions.length < subjectsToUse.length) {
+    // If some were matched, sort by startCol and fill remaining in gaps or at the end
+    subjectPositions.sort((a, b) => a.startCol - b.startCol);
+    const unassigned = subjectsToUse.filter((s) => !assignedCodes.has(s.code));
+    let lastCol = subjectPositions[subjectPositions.length - 1].startCol + 4;
+    unassigned.forEach((subj) => {
+      if (lastCol < maxCols) {
+        const map = subjectColMaps.get(subj.code)!;
+        map.startCol = lastCol;
+        subjectPositions.push({ code: subj.code, startCol: lastCol });
+        lastCol += 4;
+      }
+    });
+  }
+
+  // For each identified subject, determine its column bounds and specific sub-columns
+  subjectPositions.sort((a, b) => a.startCol - b.startCol);
+  for (let i = 0; i < subjectPositions.length; i++) {
+    const item = subjectPositions[i];
+    const map = subjectColMaps.get(item.code)!;
+    const nextStart = i < subjectPositions.length - 1 ? subjectPositions[i + 1].startCol : Math.min(item.startCol + 4, maxCols);
+    map.endCol = nextStart - 1;
+
+    // Scan columns within this subject's cluster [startCol ... endCol]
+    for (let c = item.startCol; c < nextStart; c++) {
+      const topC = cleanStr(topHeader[c]).toUpperCase();
+      const subC = cleanStr(subHeader[c]).toUpperCase();
+      const thirdC = cleanStr(thirdHeader[c]).toUpperCase();
+      const comb = `${topC} ${subC} ${thirdC}`;
+
+      // Check for max marks in header, e.g. "IA1 (25)" or "IA (50)"
+      const maxMarksMatch = comb.match(/\((\d{2,3})\)/);
+      if (maxMarksMatch && maxMarksMatch[1]) {
+        map.detectedMaxMarks = parseInt(maxMarksMatch[1], 10);
+      }
+
+      if (subC === 'CH' || subC.includes('HELD') || comb.includes('CLASS HELD')) {
+        map.chCol = c;
+      } else if (subC === 'CA' || subC.includes('ATTENDED') || comb.includes('CLASS ATTENDED')) {
+        map.caCol = c;
+      } else if (subC.includes('%') || subC.includes('ATTD') || subC.includes('ATTENDANCE')) {
+        map.attdPctCol = c;
+      } else if (
+        subC.includes('IA') ||
+        subC.includes('MARKS') ||
+        subC.includes('TEST') ||
+        subC.includes('SCORE') ||
+        comb.includes('IA1') ||
+        comb.includes('IA-1')
+      ) {
+        map.iaMarksCol = c;
+      }
+    }
+
+    // Default 4-column fallback within cluster if any column wasn't explicitly labeled
+    if (map.iaMarksCol === -1 && item.startCol < maxCols) map.iaMarksCol = item.startCol;
+    if (map.chCol === -1 && item.startCol + 1 < maxCols) map.chCol = item.startCol + 1;
+    if (map.caCol === -1 && item.startCol + 2 < maxCols) map.caCol = item.startCol + 2;
+    if (map.attdPctCol === -1 && item.startCol + 3 < maxCols) map.attdPctCol = item.startCol + 3;
+  }
 
   // Fallback for USN / Name columns if still not found
   if (usnCol === -1) {
@@ -297,6 +435,7 @@ export function parseExcelBuffer(
       }
 
       const isElective = !!subj.isElective;
+      const subjMaxMarks = colMap?.detectedMaxMarks || subj.defaultMaxMarks;
       let isNotEnrolled = false;
 
       if (isElective && (chNum === 0 && caNum === 0 && (!marksScoredStr || marksScoredStr === 'N/A' || marksScoredStr === '-'))) {
@@ -310,7 +449,7 @@ export function parseExcelBuffer(
       if (!isNotEnrolled) {
         if (marksNumeric !== null) {
           totalMarks += marksNumeric;
-          totalMaxMarks += subj.defaultMaxMarks;
+          totalMaxMarks += subjMaxMarks;
           validMarksCount++;
         }
         if (attdNumeric !== null) {
@@ -330,7 +469,7 @@ export function parseExcelBuffer(
         classAttended: isNotEnrolled ? '-' : (caNum || (caVal ? cleanStr(caVal) : '-')),
         attendancePercentage: attdPercentageStr || (isNotEnrolled ? 'N/A' : '-'),
         attendanceNum: attdNumeric,
-        maxMarks: subj.defaultMaxMarks,
+        maxMarks: subjMaxMarks,
         marksScored: marksScoredStr || (isNotEnrolled ? 'N/A' : '-'),
         marksNum: marksNumeric,
         remark,

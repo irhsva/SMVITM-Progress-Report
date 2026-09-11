@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 500 500">
+  <rect width="500" height="500" fill="#ffffff"/>
+  
+  <!-- Outer Gold Rings -->
+  <circle cx="250" cy="250" r="236" fill="#ffffff" stroke="#C59341" stroke-width="3"/>
+  <circle cx="250" cy="250" r="226" fill="none" stroke="#C59341" stroke-width="1.2"/>
+  <circle cx="250" cy="250" r="162" fill="none" stroke="#C59341" stroke-width="1.5"/>
+
+  <!-- Paths for curved text -->
+  <defs>
+    <!-- Top Arc for SODE GROUP OF INSTITUTIONS (Clockwise from ~195 deg to ~-15 deg) -->
+    <path id="topArc" d="M 52,250 A 198,198 0 1,1 448,250" fill="none"/>
+    <!-- Bottom Arc for UDUPI (Clockwise along lower edge: from ~140 deg to ~40 deg) -->
+    <path id="bottomArc" d="M 125,385 A 196,196 0 0,0 375,385" fill="none"/>
+  </defs>
+
+  <!-- Top Curved Text: SODE GROUP OF INSTITUTIONS -->
+  <text font-family="'Times New Roman', 'FreeSerif', Georgia, serif" font-size="28" font-weight="700" fill="#6E1B2C" letter-spacing="2.5">
+    <textPath href="#topArc" xlink:href="#topArc" startOffset="50%" text-anchor="middle">
+      SODE GROUP OF INSTITUTIONS
+    </textPath>
+  </text>
+
+  <!-- Flanking Gold Dots -->
+  <circle cx="108" cy="378" r="11" fill="#C59341"/>
+  <circle cx="392" cy="378" r="11" fill="#C59341"/>
+
+  <!-- Bottom Curved Text: UDUPI -->
+  <text font-family="'Arial', 'FreeSans', Helvetica, sans-serif" font-size="34" font-weight="800" fill="#6E1B2C" letter-spacing="4">
+    <textPath href="#bottomArc" xlink:href="#bottomArc" startOffset="50%" text-anchor="middle">
+      UDUPI
+    </textPath>
+  </text>
+
+  <!-- Golden Concentric Arcs behind the lotus -->
+  <g stroke="#C59341" stroke-width="1.5" fill="none" opacity="0.85">
+    <path d="M 152,240 A 120,120 0 0,1 348,240" />
+    <path d="M 166,206 A 140,140 0 0,1 334,206" />
+    <path d="M 185,174 A 155,155 0 0,1 315,174" />
+    <path d="M 210,146 A 170,170 0 0,1 290,146" />
+  </g>
+
+  <!-- Top Sun Element -->
+  <g transform="translate(250, 142)">
+    <!-- Golden halo ring -->
+    <circle cx="0" cy="0" r="23" fill="none" stroke="#C59341" stroke-width="1.2"/>
+    <!-- Radiating Maroon Sun Rays (16 rays) -->
+    <g fill="#6E1B2C">
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(0)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(22.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(45)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(67.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(90)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(112.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(135)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(157.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(180)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(202.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(225)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(247.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(270)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(292.5)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(315)"/>
+      <polygon points="-2.5,-16 2.5,-16 0,-22" transform="rotate(337.5)"/>
+      <!-- Central Maroon Sun Disc -->
+      <circle cx="0" cy="0" r="15" />
+    </g>
+  </g>
+
+  <!-- Central Interlocking Stylized Lotus in Deep Maroon -->
+  <g stroke="#6E1B2C" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Center Diamond Bud -->
+    <path d="M 250,176 C 262,205 278,235 292,260 C 275,295 260,330 250,370 C 240,330 225,295 208,260 C 222,235 238,205 250,176 Z" />
+    
+    <!-- Left Wing Upper Loop -->
+    <path d="M 250,176 C 228,210 196,242 165,268 C 190,300 220,335 250,370" />
+    <!-- Right Wing Upper Loop -->
+    <path d="M 250,176 C 272,210 304,242 335,268 C 310,300 280,335 250,370" />
+
+    <!-- Outermost Left Petal Curl -->
+    <path d="M 148,284 C 130,315 135,348 152,368 C 175,372 215,355 250,318 C 215,265 178,235 152,210 C 182,215 220,240 250,285" />
+    <!-- Outermost Right Petal Curl -->
+    <path d="M 352,284 C 370,315 365,348 348,368 C 325,372 285,355 250,318 C 285,265 322,235 348,210 C 318,215 280,240 250,285" />
+    
+    <!-- Lower Base Sweep Curve -->
+    <path d="M 152,368 C 185,395 220,395 250,370 C 280,395 315,395 348,368" />
+  </g>
+
+  <!-- Sanskrit Motto: सर्वे भद्राणि पश्यन्तु -->
+  <text x="250" y="382" text-anchor="middle" font-family="'FreeSans', 'Arial', sans-serif" font-size="16.5" font-weight="bold" fill="#AC7D30" letter-spacing="0.8">
+    सर्वे भद्राणि पश्यन्तु
+  </text>
+</svg>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { LogoPreset } from '../types';
+import { SodeEmblem } from './SodeEmblem';
 
 export const InstitutionalLogoRenderer: React.FC<InstitutionalLogoRendererProps> = ({
   preset,
@@ -12,16 +13,34 @@ export const InstitutionalLogoRenderer: React.FC<InstitutionalLogoRendererProps>
     return <div className={`${className} opacity-0 pointer-events-none`} />;
   }
 
-  // Determine the effective image source, prioritizing customUrl over default preset images
-  let imgSrc = customUrl;
-  if (!imgSrc) {
-    let effectivePreset = preset === 'custom' ? defaultPreset : preset;
-    if (effectivePreset === 'sode') {
-      imgSrc = '/smvitm_left.jpg';
-    } else if (effectivePreset === 'smvitm') {
-      imgSrc = '/smvitm_right.jpg';
-    }
+  // Prioritize user uploaded custom URL or image data
+  if (customUrl) {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <img
+          src={customUrl}
+          alt={alt}
+          className="max-w-full max-h-full object-contain filter drop-shadow-xs"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
+      </div>
+    );
   }
+
+  const effectivePreset = preset === 'custom' ? defaultPreset : preset;
+
+  // Direct high-fidelity vector SODE emblem rendering
+  if (effectivePreset === 'sode') {
+    return (
+      <div className={`flex items-center justify-center ${className}`}>
+        <SodeEmblem className="max-w-full max-h-full object-contain filter drop-shadow-xs" />
+      </div>
+    );
+  }
+
+  const imgSrc = effectivePreset === 'smvitm' ? '/smvitm_right.jpg' : '';
 
   return (
     <div className={`flex items-center justify-center ${className}`}>
@@ -31,7 +50,6 @@ export const InstitutionalLogoRenderer: React.FC<InstitutionalLogoRendererProps>
           alt={alt}
           className="max-w-full max-h-full object-contain filter drop-shadow-xs"
           onError={(e) => {
-            // fallback if image fails to load
             (e.target as HTMLElement).style.display = 'none';
           }}
         />

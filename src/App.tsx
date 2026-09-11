@@ -32,6 +32,7 @@ import confetti from 'canvas-confetti';
 import { StudentReport, ReportConfig, LogoSettings, SubjectDef } from './types';
 import { DEFAULT_CONFIG, INSTITUTION_INFO, DEFAULT_SUBJECTS } from './data/defaultSubjects';
 import { getSampleReports, generateSampleExcelWorkbook } from './data/sampleExcelData';
+import { parseExcelBuffer } from './utils/excelParser';
 import { UploadSection } from './components/UploadSection';
 import { PrintableReport } from './components/PrintableReport';
 import { PlainTextView } from './components/PlainTextView';
@@ -57,38 +58,67 @@ export default function App() {
   const [config, setConfig] = useState<ReportConfig>(DEFAULT_CONFIG);
   const [customSubjects, setCustomSubjects] = useState<SubjectDef[]>(() => {
     const saved = localStorage.getItem('customSubjects');
-    return saved ? JSON.parse(saved) : DEFAULT_SUBJECTS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasLabs = parsed.some((s: SubjectDef) => s.code.toUpperCase().endsWith('L'));
+          if (hasLabs && parsed.length >= 9) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse customSubjects', e);
+      }
+    }
+    return DEFAULT_SUBJECTS;
   });
 
+  const [lastUploadedBuffer, setLastUploadedBuffer] = useState<ArrayBuffer | null>(null);
+
+  // Synchronize reports whenever customSubjects or config changes
   useEffect(() => {
     localStorage.setItem('customSubjects', JSON.stringify(customSubjects));
-  }, [customSubjects]);
 
-  // When customSubjects changes, re-order subjects in reports
-  useEffect(() => {
-    if (reports.length === 0) return;
-    setReports(prev => prev.map(report => {
-      const newSubjectsList = customSubjects.map(subj => {
-        const existingSubj = report.subjects.find(s => s.code === subj.code);
-        return existingSubj || {
-          code: subj.code,
-          name: subj.name,
-          classHeld: '-',
-          classAttended: '-',
-          attendancePercentage: '-',
-          attendanceNum: null,
-          maxMarks: subj.defaultMaxMarks,
-          marksScored: '-',
-          marksNum: null,
-          remark: '',
-          isElective: !!subj.isElective,
-          electiveType: subj.electiveType,
-          isNotEnrolled: true,
-        };
-      });
-      return { ...report, subjects: newSubjectsList };
-    }));
-  }, [customSubjects]);
+    if (lastUploadedBuffer) {
+      try {
+        const reParsed = parseExcelBuffer(lastUploadedBuffer, config, customSubjects);
+        const withLogos = reParsed.map((r) => ({
+          ...r,
+          logos,
+          institutionInfo: config.institutionInfo,
+          testName: config.testName,
+          academicYear: config.academicYear,
+          hodName: config.hodName,
+          hodTitle: config.hodTitle,
+          department: config.department,
+        }));
+        setReports(withLogos);
+        if (withLogos.length > 0 && !withLogos.some((r) => r.id === selectedStudentId)) {
+          setSelectedStudentId(withLogos[0].id);
+        }
+      } catch (err) {
+        console.error('Error re-parsing uploaded file buffer with updated subjects:', err);
+      }
+    } else {
+      // Regenerate from sample data using latest customSubjects
+      const sample = getSampleReports(customSubjects);
+      const withLogos = sample.map((r) => ({
+        ...r,
+        logos,
+        institutionInfo: config.institutionInfo,
+        testName: config.testName,
+        academicYear: config.academicYear,
+        hodName: config.hodName,
+        hodTitle: config.hodTitle,
+        department: config.department,
+      }));
+      setReports(withLogos);
+      if (withLogos.length > 0 && !withLogos.some((r) => r.id === selectedStudentId)) {
+        setSelectedStudentId(withLogos[0].id);
+      }
+    }
+  }, [customSubjects, config]);
   const [logos, setLogos] = useState<LogoSettings>({
     leftPreset: 'sode',
     rightPreset: 'smvitm',
@@ -135,7 +165,10 @@ export default function App() {
     }
   }, []);
 
-  const handleReportsLoaded = (newReports: StudentReport[], filename: string) => {
+  const handleReportsLoaded = (newReports: StudentReport[], filename: string, rawBuffer?: ArrayBuffer) => {
+    if (rawBuffer) {
+      setLastUploadedBuffer(rawBuffer);
+    }
     const withLogos = newReports.map((r) => ({ ...r, logos, institutionInfo: config.institutionInfo }));
     setReports(withLogos);
     setCurrentFilename(filename);
