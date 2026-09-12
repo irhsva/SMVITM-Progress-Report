@@ -486,16 +486,18 @@ export function downloadAnalyticsExcel(reports: StudentReport[], filename = 'SMV
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
       if (s.isNotEnrolled) return;
+      const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
       if (!subjectMap.has(s.code)) {
         subjectMap.set(s.code, { name: s.name, enrolled: 0, totalMarks: 0, maxMarks: -1, minMarks: 999, totalAttd: 0, passCount: 0 });
       }
       const entry = subjectMap.get(s.code)!;
       entry.enrolled++;
       if (s.marksNum !== null && s.marksNum !== undefined) {
-        entry.totalMarks += s.marksNum;
-        if (entry.maxMarks === -1 || s.marksNum > entry.maxMarks) entry.maxMarks = s.marksNum;
-        if (entry.minMarks === 999 || s.marksNum < entry.minMarks) entry.minMarks = s.marksNum;
-        if (s.marksNum >= 20) entry.passCount++;
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? (s.marksNum / 50) * 25 : s.marksNum;
+        entry.totalMarks += mark25;
+        if (entry.maxMarks === -1 || mark25 > entry.maxMarks) entry.maxMarks = mark25;
+        if (entry.minMarks === 999 || mark25 < entry.minMarks) entry.minMarks = mark25;
+        if (mark25 >= targetMax * 0.4) entry.passCount++;
       }
       if (s.attendanceNum !== null && s.attendanceNum !== undefined) {
         entry.totalAttd += s.attendanceNum;
@@ -508,42 +510,45 @@ export function downloadAnalyticsExcel(reports: StudentReport[], filename = 'SMV
     const avgAttd = data.enrolled > 0 ? Math.round(data.totalAttd / data.enrolled) : 0;
     const avgMarks = data.enrolled > 0 ? Number((data.totalMarks / data.enrolled).toFixed(1)) : 0;
     const passRate = data.enrolled > 0 ? Math.round((data.passCount / data.enrolled) * 100) : 0;
-    const maxVal = data.maxMarks === -1 ? 'N/A' : data.maxMarks;
-    const minVal = data.minMarks === 999 ? 'N/A' : data.minMarks;
+    const maxVal = data.maxMarks === -1 ? 'N/A' : Number(data.maxMarks.toFixed(1));
+    const minVal = data.minMarks === 999 ? 'N/A' : Number(data.minMarks.toFixed(1));
 
-    const passThreshold = 10; // 40% of standard 25
     subjectRows.push({
       'Subject Code': code,
       'Subject Title': data.name,
       'Total Enrolled': data.enrolled,
-      'Max Marks Recorded': maxVal,
-      'Min Marks Recorded': minVal,
-      'Average Marks': avgMarks,
+      'Max Marks Recorded (25)': maxVal,
+      'Min Marks Recorded (25)': minVal,
+      'Average Marks (out of 25)': avgMarks,
       'Average Attendance %': `${avgAttd}%`,
-      'Pass Rate %': `${passRate}%`,
+      'Pass Rate % (>=10/25)': `${passRate}%`,
     });
   });
 
   const subWs = XLSX.utils.json_to_sheet(subjectRows);
   XLSX.utils.book_append_sheet(wb, subWs, 'Subject_Performance_Stats');
 
-  // 2. Low Marks Defaulters Sheet
+  // 2. Low Marks Defaulters Sheet (< 10/25)
   const lowMarksRows: Record<string, unknown>[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      const passCutoff = Math.round(s.maxMarks * 0.4);
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < passCutoff) {
-        lowMarksRows.push({
-          'USN': r.student.usn,
-          'Student Name': r.student.name,
-          'Proctor Name': r.student.proctorName,
-          'Subject Code': s.code,
-          'Subject Title': s.name,
-          'Marks Scored': s.marksNum,
-          'Max Marks': s.maxMarks,
-          'Threshold (40%)': passCutoff,
-          'Deficit': passCutoff - s.marksNum,
-        });
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined) {
+        const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? Math.round((s.marksNum / 50) * 25) : s.marksNum;
+        const passCutoff = targetMax * 0.4; // 10 out of 25
+        if (mark25 < passCutoff) {
+          lowMarksRows.push({
+            'USN': r.student.usn,
+            'Student Name': r.student.name,
+            'Proctor Name': r.student.proctorName,
+            'Subject Code': s.code,
+            'Subject Title': s.name,
+            'Marks Scored (out of 25)': mark25,
+            'Max Marks': targetMax,
+            'Threshold (40%)': passCutoff,
+            'Deficit': Number((passCutoff - mark25).toFixed(1)),
+          });
+        }
       }
     });
   });

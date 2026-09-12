@@ -1044,15 +1044,19 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   const lowMarksStudents: { name: string; usn: string; proctor: string; subjectCode: string; subjectName: string; marks: number }[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < (s.maxMarks ?? 25) * 0.4) {
-        lowMarksStudents.push({
-          name: r.student.name,
-          usn: r.student.usn,
-          proctor: r.student.proctorName || 'N/A',
-          subjectCode: s.code,
-          subjectName: s.name,
-          marks: s.marksNum,
-        });
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined) {
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? Math.round((s.marksNum / 50) * 25) : s.marksNum;
+        const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
+        if (mark25 < targetMax * 0.4) {
+          lowMarksStudents.push({
+            name: r.student.name,
+            usn: r.student.usn,
+            proctor: r.student.proctorName || 'N/A',
+            subjectCode: s.code,
+            subjectName: s.name,
+            marks: mark25,
+          });
+        }
       }
     });
   });
@@ -1064,7 +1068,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 2.5, textColor: [15, 23, 42] },
     headStyles: { fillColor: [139, 29, 36], textColor: [255, 255, 255], fontStyle: 'bold' },
-    head: [['Total Enrolled', 'Avg Class Attendance', 'Avg IA-1 Score', 'Attendance Shortage (<75%)', 'IA-1 Defaulters (<40%)']],
+    head: [['Total Enrolled', 'Avg Class Attendance', 'Avg IA-1 Score', 'Attendance Shortage (<75%)', 'IA-1 Defaulters (<10/25)']],
     body: [[
       String(totalStudents),
       `${avgClassAttendance}%`,
@@ -1088,16 +1092,18 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
       if (s.isNotEnrolled) return;
+      const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
       if (!subjectMap.has(s.code)) {
         subjectMap.set(s.code, { name: s.name, enrolled: 0, totalMarks: 0, maxMarks: -1, minMarks: 999, totalAttd: 0, passCount: 0 });
       }
       const entry = subjectMap.get(s.code)!;
       entry.enrolled++;
       if (s.marksNum !== null && s.marksNum !== undefined) {
-        entry.totalMarks += s.marksNum;
-        if (entry.maxMarks === -1 || s.marksNum > entry.maxMarks) entry.maxMarks = s.marksNum;
-        if (entry.minMarks === 999 || s.marksNum < entry.minMarks) entry.minMarks = s.marksNum;
-        if (s.marksNum >= (s.maxMarks ?? 25) * 0.4) entry.passCount++;
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? (s.marksNum / 50) * 25 : s.marksNum;
+        entry.totalMarks += mark25;
+        if (entry.maxMarks === -1 || mark25 > entry.maxMarks) entry.maxMarks = mark25;
+        if (entry.minMarks === 999 || mark25 < entry.minMarks) entry.minMarks = mark25;
+        if (mark25 >= targetMax * 0.4) entry.passCount++;
       }
       if (s.attendanceNum !== null && s.attendanceNum !== undefined) {
         entry.totalAttd += s.attendanceNum;
@@ -1110,8 +1116,8 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     const avgAttd = data.enrolled > 0 ? Math.round(data.totalAttd / data.enrolled) : 0;
     const avgMarks = data.enrolled > 0 ? (data.totalMarks / data.enrolled).toFixed(1) : '0';
     const passRate = data.enrolled > 0 ? Math.round((data.passCount / data.enrolled) * 100) : 0;
-    const maxVal = data.maxMarks === -1 ? 'N/A' : data.maxMarks;
-    const minVal = data.minMarks === 999 ? 'N/A' : data.minMarks;
+    const maxVal = data.maxMarks === -1 ? 'N/A' : Number(data.maxMarks.toFixed(1));
+    const minVal = data.minMarks === 999 ? 'N/A' : Number(data.minMarks.toFixed(1));
 
     subjectRows.push([
       code,
@@ -1131,7 +1137,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     theme: 'grid',
     styles: { fontSize: 7.5, cellPadding: 2, textColor: [15, 23, 42] },
     headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold' },
-    head: [['Code', 'Subject Title', 'Enrolled', 'Max', 'Min', 'Avg (50)', 'Avg Attd', 'Pass Rate']],
+    head: [['Code', 'Subject Title', 'Enrolled', 'Max', 'Min', 'Avg (25)', 'Avg Attd', 'Pass Rate (>=10)']],
     body: subjectRows,
   });
 
@@ -1142,7 +1148,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text(`2. IA-1 DEFAULTERS LIST (SCORING < 40% OF MAX MARKS) [Total: ${lowMarksStudents.length}]`, margin, currentY);
+  doc.text(`2. IA-1 DEFAULTERS LIST (SCORING < 10/25 MARKS) [Total: ${lowMarksStudents.length}]`, margin, currentY);
   currentY += 2;
 
   const lowMarksRows = lowMarksStudents.map((item, idx) => [
@@ -1160,7 +1166,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     theme: 'grid',
     styles: { fontSize: 7, cellPadding: 1.8, textColor: [15, 23, 42] },
     headStyles: { fillColor: [185, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold' },
-    head: [['#', 'USN', 'Student Name', 'Subject Code', 'Marks (50)', 'Proctor']],
+    head: [['#', 'USN', 'Student Name', 'Subject Code', 'Marks (25)', 'Proctor']],
     body: lowMarksRows.length > 0 ? lowMarksRows : [['-', 'No defaulters found in this category.', '', '', '', '']],
   });
 

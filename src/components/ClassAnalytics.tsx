@@ -31,38 +31,43 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
   // Low attendance count (<85%)
   const lowAttdStudents = reports.filter((r) => (r.overallAttendance || 0) < 85);
 
-  // Low marks students (scored < 40% in any subject)
+  // Low marks students (scored < 40% in any subject, i.e. < 10 out of 25)
   const lowMarksStudents: { report: StudentReport; subjectCode: string; subjectName: string; marks: number }[] = [];
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
-      // Assuming 50 marks maximum based on the code. 40% of 50 = 20. Wait, the user said < 40% marks. 
-      // If the subject is out of 50, <40% means < 20. The original code was < 20.
-      // Let's verify if the user meant 40% of the total marks in that subject.
-      // The original code was `s.marksNum < 20` (which is 40% of 50).
-      // If the subject is out of 50, then < 20 is exactly < 40%.
-      // I will keep `s.marksNum < 20` as it maps to < 40% for subjects out of 50.
-      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined && s.marksNum < 20) {
-        lowMarksStudents.push({ report: r, subjectCode: s.code, subjectName: s.name, marks: s.marksNum });
+      if (!s.isNotEnrolled && s.marksNum !== null && s.marksNum !== undefined) {
+        const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
+        // If marks are out of 50, reduce to 25
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? Math.round((s.marksNum / 50) * 25) : s.marksNum;
+        const passCutoff = targetMax * 0.4; // 10 marks out of 25
+
+        if (mark25 < passCutoff) {
+          lowMarksStudents.push({ report: r, subjectCode: s.code, subjectName: s.name, marks: mark25 });
+        }
       }
     });
   });
 
-  // Subject-wise statistics (including Max & Min marks)
-  const subjectMap = new Map<string, { name: string; enrolled: number; totalMarks: number; maxMarks: number; minMarks: number; totalAttd: number; passCount: number }>();
+  // Subject-wise statistics (including Max & Min marks reduced to 25)
+  const subjectMap = new Map<string, { name: string; enrolled: number; totalMarks: number; maxMarks: number; minMarks: number; totalAttd: number; passCount: number; targetMax: number }>();
 
   reports.forEach((r) => {
     r.subjects.forEach((s) => {
       if (s.isNotEnrolled) return;
+      const targetMax = (s.maxMarks && s.maxMarks !== 50) ? s.maxMarks : 25;
       if (!subjectMap.has(s.code)) {
-        subjectMap.set(s.code, { name: s.name, enrolled: 0, totalMarks: 0, maxMarks: -1, minMarks: 999, totalAttd: 0, passCount: 0 });
+        subjectMap.set(s.code, { name: s.name, enrolled: 0, totalMarks: 0, maxMarks: -1, minMarks: 999, totalAttd: 0, passCount: 0, targetMax });
       }
       const entry = subjectMap.get(s.code)!;
       entry.enrolled++;
       if (s.marksNum !== null && s.marksNum !== undefined) {
-        entry.totalMarks += s.marksNum;
-        if (entry.maxMarks === -1 || s.marksNum > entry.maxMarks) entry.maxMarks = s.marksNum;
-        if (entry.minMarks === 999 || s.marksNum < entry.minMarks) entry.minMarks = s.marksNum;
-        if (s.marksNum >= 20) entry.passCount++;
+        // Reduce marks to 25 scale if they were entered out of 50
+        const mark25 = (s.marksNum > 25 || s.maxMarks === 50) ? (s.marksNum / 50) * 25 : s.marksNum;
+        entry.totalMarks += mark25;
+        if (entry.maxMarks === -1 || mark25 > entry.maxMarks) entry.maxMarks = mark25;
+        if (entry.minMarks === 999 || mark25 < entry.minMarks) entry.minMarks = mark25;
+        // Passing threshold is 10 out of 25 (40%)
+        if (mark25 >= (targetMax * 0.4)) entry.passCount++;
       }
       if (s.attendanceNum !== null && s.attendanceNum !== undefined) {
         entry.totalAttd += s.attendanceNum;
@@ -126,10 +131,10 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             <Award className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-slate-900">
-            {avgClassMarks}%
+            {((avgClassMarks * 25) / 100).toFixed(1)} / 25
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">
-            Class Average ({((avgClassMarks * 25) / 100).toFixed(1)}/25 marks)
+            Class Average: {avgClassMarks}%
           </div>
         </div>
 
@@ -155,7 +160,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             {new Set(lowMarksStudents.map(l => l.report.id)).size}
           </div>
           <div className="text-[10px] text-rose-700 mt-0.5">
-            Students scoring &lt; 40% in any subject
+            Students scoring &lt; 10/25 (40%) in any subject
           </div>
         </div>
       </div>
@@ -174,9 +179,9 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
                 <th className="p-2.5 text-center">Enrolled</th>
                 <th className="p-2.5 text-center">Max Marks</th>
                 <th className="p-2.5 text-center">Min Marks</th>
-                <th className="p-2.5 text-center">Avg Marks (50)</th>
+                <th className="p-2.5 text-center">Avg Marks (25)</th>
                 <th className="p-2.5 text-center">Avg Attd %</th>
-                <th className="p-2.5 text-center">Pass Rate % (&gt;=20)</th>
+                <th className="p-2.5 text-center">Pass Rate % (&gt;=10)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -184,8 +189,8 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
                 const avgAttd = data.enrolled > 0 ? Math.round(data.totalAttd / data.enrolled) : 0;
                 const avgMarks = data.enrolled > 0 ? (data.totalMarks / data.enrolled).toFixed(1) : '0';
                 const passRate = data.enrolled > 0 ? Math.round((data.passCount / data.enrolled) * 100) : 0;
-                const maxVal = data.maxMarks === -1 ? 'N/A' : data.maxMarks;
-                const minVal = data.minMarks === 999 ? 'N/A' : data.minMarks;
+                const maxVal = data.maxMarks === -1 ? 'N/A' : Number(data.maxMarks.toFixed(1));
+                const minVal = data.minMarks === 999 ? 'N/A' : Number(data.minMarks.toFixed(1));
 
                 return (
                   <tr key={code} className="hover:bg-slate-50">
@@ -215,7 +220,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
 
       {/* Defaulter & Shortage Lists Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Low Marks Students List (< 20) */}
+        {/* Low Marks Students List (< 10 / 25) */}
         <div className="border border-rose-200 rounded-lg bg-rose-50/30 overflow-hidden">
           <div
             className="flex items-center justify-between p-3 bg-rose-100/70 border-b border-rose-200 cursor-pointer"
@@ -224,7 +229,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-700" />
               <h4 className="text-xs font-bold text-rose-900 uppercase">
-                Students Scoring Below Passing Mark (&lt; 40%) [{lowMarksStudents.length}]
+                Students Scoring Below Passing Mark (&lt; 10/25) [{lowMarksStudents.length}]
               </h4>
             </div>
             {showDefaulters ? <ChevronUp className="w-4 h-4 text-rose-700" /> : <ChevronDown className="w-4 h-4 text-rose-700" />}
@@ -247,7 +252,7 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
                       </div>
                       <div className="text-right">
                         <span className="px-2 py-1 bg-rose-100 text-rose-800 font-mono font-bold rounded">
-                          {item.marks} / 50
+                          {item.marks} / 25
                         </span>
                       </div>
                     </div>

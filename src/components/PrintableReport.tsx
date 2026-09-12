@@ -215,7 +215,8 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
               {report.subjects.map((sub, idx) => {
                 const isNotEnrolled = sub.isNotEnrolled;
                 const isWarning = typeof sub.attendancePercentage === 'number' && sub.attendancePercentage < 75 && !isNotEnrolled;
-                const isFail = typeof sub.marksScored === 'number' && sub.marksScored < 20 && !isNotEnrolled;
+                const passCutoff = ((sub.maxMarks && sub.maxMarks !== 50) ? sub.maxMarks : 25) * 0.4;
+                const isFail = typeof sub.marksScored === 'number' && sub.marksScored < passCutoff && !isNotEnrolled;
 
                 return (
                   <tr key={sub.code || idx} className="divide-x divide-slate-300 hover:bg-slate-50/60">
@@ -246,7 +247,7 @@ export const PrintableReport: React.FC<PrintableReportProps> = ({ report, compac
                       {isNotEnrolled ? '-' : sub.attendancePercentage}
                     </td>
                     <td className="p-1.5 sm:p-2 text-center align-middle font-mono">
-                      {isNotEnrolled ? '-' : (sub.maxMarks ?? 25)}
+                      {isNotEnrolled ? '-' : ((sub.maxMarks && sub.maxMarks !== 50) ? sub.maxMarks : 25)}
                     </td>
                     <td
                       className={`p-1.5 sm:p-2 text-center align-middle font-mono font-bold ${

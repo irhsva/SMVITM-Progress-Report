@@ -10,19 +10,21 @@ function cleanStr(val: any): string {
   return String(val).trim().replace(/\s+/g, ' ');
 }
 
-function calculateRemark(marks: number | null, attd: number | null, config: ReportConfig): string {
+function calculateRemark(marks: number | null, attd: number | null, config: ReportConfig, maxMarks: number = 25): string {
   if (marks === null && attd === null) return '';
+  const passCutoff = maxMarks * 0.4;
   if (attd !== null && attd < config.attendanceWarningThreshold) {
-    if (marks !== null && marks < config.passThresholdMarks) {
+    if (marks !== null && marks < passCutoff) {
       return 'Low Attd & Needs Impr.';
     }
     return 'Low Attendance';
   }
   if (marks !== null) {
-    if (marks >= 45) return 'Excellent';
-    if (marks >= 38) return 'Very Good';
-    if (marks >= 30) return 'Good';
-    if (marks >= config.passThresholdMarks) return 'Satisfactory';
+    const pct = (marks / maxMarks) * 100;
+    if (pct >= 85) return 'Excellent';
+    if (pct >= 70) return 'Very Good';
+    if (pct >= 55) return 'Good';
+    if (pct >= 40) return 'Satisfactory';
     return 'Needs Improvement';
   }
   return '';
@@ -435,7 +437,16 @@ export function parseExcelBuffer(
       }
 
       const isElective = !!subj.isElective;
-      const subjMaxMarks = colMap?.detectedMaxMarks || subj.defaultMaxMarks;
+      let subjMaxMarks = (colMap?.detectedMaxMarks && colMap.detectedMaxMarks !== 50) ? colMap.detectedMaxMarks : (subj.defaultMaxMarks || 25);
+
+      // If marks were recorded out of 50 or column detected 50, reduce to 25
+      if (marksNumeric !== null && (colMap?.detectedMaxMarks === 50 || (marksNumeric > 25 && subjMaxMarks <= 25))) {
+        const reduced = Math.round((marksNumeric / 50) * 25);
+        marksNumeric = reduced;
+        marksScoredStr = String(reduced);
+        subjMaxMarks = 25;
+      }
+
       let isNotEnrolled = false;
 
       if (isElective && (chNum === 0 && caNum === 0 && (!marksScoredStr || marksScoredStr === 'N/A' || marksScoredStr === '-'))) {
@@ -459,7 +470,7 @@ export function parseExcelBuffer(
       }
 
       const remark = config.autoRemarks && !isNotEnrolled
-        ? calculateRemark(marksNumeric, attdNumeric, config)
+        ? calculateRemark(marksNumeric, attdNumeric, config, subjMaxMarks)
         : '';
 
       subjectsList.push({
