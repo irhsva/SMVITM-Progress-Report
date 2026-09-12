@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import JSZip from 'jszip';
-import { StudentReport, LogoPreset } from '../types';
+import { StudentReport, LogoPreset, ReportConfig } from '../types';
 
 export interface ProgressCallback {
   (current: number, total: number, studentName: string): void;
@@ -927,7 +927,11 @@ export async function downloadSingleProctorMergedPdf(
 /**
  * Generates and downloads a comprehensive Analytics PDF report
  */
-export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 'SMVITM_Class_Analytics_Report.pdf'): Promise<void> {
+export async function downloadAnalyticsPdf(
+  reports: StudentReport[],
+  filename?: string,
+  config?: ReportConfig
+): Promise<void> {
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 10;
@@ -938,6 +942,17 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   // Resolve logos using first report or default
   const sampleReport = (reports[0] || { logos: { leftPreset: 'sode', rightPreset: 'smvitm' } }) as any;
   const logoImages = await resolveReportLogos(sampleReport as StudentReport);
+
+  const rawTestName = (config?.testName || sampleReport?.testName || 'IA TEST 1').trim();
+  const testName = rawTestName.toUpperCase();
+  const semester = (config?.semester || sampleReport?.student?.semester || '7th Semester').trim().toUpperCase();
+  const rawAcadYear = (config?.academicYear || sampleReport?.academicYear || '2026-27 (Odd Sem)').trim();
+  const academicYear = rawAcadYear.toUpperCase().startsWith('ACADEMIC YEAR')
+    ? rawAcadYear.toUpperCase()
+    : `ACADEMIC YEAR: ${rawAcadYear.toUpperCase()}`;
+
+  const safeTest = testName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const finalFilename = filename || `SMVITM_${safeTest}_Analytics_Report.pdf`;
 
   // 1. Render Left & Right Institutional Crests / Logos
   if (logoImages?.left) {
@@ -1012,20 +1027,40 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   doc.setLineWidth(0.65);
   doc.line(margin, separatorY, margin + contentWidth, separatorY);
 
-  // 3. Report Title and Academic Year
-  let currentY = separatorY + 4.5;
+  // 3. Report Title and Internals Assessment Heading
+  let currentY = separatorY + 4.2;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
   doc.text('CLASS PERFORMANCE & ATTENDANCE ANALYTICS REPORT', pageWidth / 2, currentY, { align: 'center' });
   currentY += 4.5;
 
+  // Stylized Internals Pill Badge
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(139, 29, 36);
-  doc.text('7TH SEMESTER (ACADEMIC YEAR 2026-27)', pageWidth / 2, currentY, { align: 'center' });
+  doc.setFontSize(8.8);
+  const internalBadgeText = `ASSESSMENT: ${testName}`;
+  const badgeTextW = doc.getTextWidth(internalBadgeText);
+  const badgeW = Math.max(badgeTextW + 12, 62);
+  const badgeH = 5.2;
+  const badgeX = (pageWidth - badgeW) / 2;
+  const badgeY = currentY - 3.8;
 
-  currentY += 6;
+  // Soft tinted pill container with crisp institutional maroon outline
+  doc.setFillColor(254, 242, 242);
+  doc.setDrawColor(139, 29, 36);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.8, 1.8, 'FD');
+
+  doc.setTextColor(139, 29, 36);
+  doc.text(internalBadgeText, pageWidth / 2, currentY - 0.2, { align: 'center' });
+  currentY += 4.2;
+
+  // Semester and Academic Year subtitle
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`${semester}   •   ${academicYear}`, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 5.5;
 
   // Compute stats
   const totalStudents = reports.length;
@@ -1068,7 +1103,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 2.5, textColor: [15, 23, 42] },
     headStyles: { fillColor: [139, 29, 36], textColor: [255, 255, 255], fontStyle: 'bold' },
-    head: [['Total Enrolled', 'Avg Class Attendance', 'Avg IA-1 Score', 'Attendance Shortage (<75%)', 'IA-1 Defaulters (<10/25)']],
+    head: [['Total Enrolled', 'Avg Class Attendance', `Avg ${testName} Score`, 'Attendance Shortage (<75%)', `${testName} Defaulters (<10/25)`]],
     body: [[
       String(totalStudents),
       `${avgClassAttendance}%`,
@@ -1144,11 +1179,11 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
   // @ts-expect-error autoTable plugin stores lastAutoTable
   currentY = doc.lastAutoTable.finalY + 6;
 
-  // IA-1 Defaulters Table
+  // Defaulters Table for this Internal Assessment
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text(`2. IA-1 DEFAULTERS LIST (SCORING < 10/25 MARKS) [Total: ${lowMarksStudents.length}]`, margin, currentY);
+  doc.text(`2. ${testName} DEFAULTERS LIST (SCORING < 10/25 MARKS) [Total: ${lowMarksStudents.length}]`, margin, currentY);
   currentY += 2;
 
   const lowMarksRows = lowMarksStudents.map((item, idx) => [
@@ -1222,7 +1257,7 @@ export async function downloadAnalyticsPdf(reports: StudentReport[], filename = 
     );
   }
 
-  doc.save(filename);
+  doc.save(finalFilename);
 }
 
 

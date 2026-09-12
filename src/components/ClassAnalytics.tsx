@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { Users, Award, AlertTriangle, TrendingUp, BookOpen, Download, ShieldAlert, ChevronDown, ChevronUp, FileText } from 'lucide-react';
-import { StudentReport } from '../types';
+import { StudentReport, ReportConfig } from '../types';
 import { downloadAnalyticsExcel } from '../utils/downloadAllReports';
 import { downloadAnalyticsPdf } from '../utils/pdfGenerator';
 
 interface ClassAnalyticsProps {
   reports: StudentReport[];
+  config?: ReportConfig;
 }
 
-export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
+export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports, config }) => {
   const [showDefaulters, setShowDefaulters] = useState(true);
   const [showShortage, setShowShortage] = useState(true);
 
   if (!reports || reports.length === 0) return null;
 
   const totalStudents = reports.length;
+  const activeTestName = (config?.testName || reports[0]?.testName || 'IA TEST 1').trim();
+  const activeSemester = (config?.semester || reports[0]?.student?.semester || '7th Sem').trim();
+  const activeAcadYear = (config?.academicYear || reports[0]?.academicYear || '2026-27').trim();
 
   // Calculate overall attendance
   const validAttd = reports.filter((r) => r.overallAttendance !== null && r.overallAttendance !== undefined);
@@ -79,12 +83,17 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 sm:p-6 mb-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
         <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            Class Performance & Attendance Analytics
-          </h3>
-          <p className="text-xs font-semibold text-blue-800">
-            {reports[0].institutionInfo?.name || 'SMVITM Bantakal'}
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Class Performance & Attendance Analytics
+            </h3>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 shadow-xs">
+              {activeTestName}
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-blue-800 mt-0.5">
+            {reports[0].institutionInfo?.name || 'SMVITM Bantakal'} • {activeSemester} ({activeAcadYear})
           </p>
           <p className="text-xs text-slate-500">
             Comprehensive Department Analytics, Subject High/Lows, and Defaulter Lists ({totalStudents} Enrolled)
@@ -92,12 +101,13 @@ export const ClassAnalytics: React.FC<ClassAnalyticsProps> = ({ reports }) => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => downloadAnalyticsPdf(reports)}
+            onClick={() => downloadAnalyticsPdf(reports, undefined, config)}
             id="download-analytics-pdf-btn"
             className="flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
+            title={`Download ${activeTestName} Analytics PDF`}
           >
             <FileText className="w-4 h-4" />
-            Download Analytics PDF
+            Download {activeTestName} PDF
           </button>
           <button
             onClick={() => downloadAnalyticsExcel(reports)}

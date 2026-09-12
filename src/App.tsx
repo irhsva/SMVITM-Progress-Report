@@ -843,7 +843,7 @@ export default function App() {
           {/* TAB 3: Class Analytics */}
           {activeTab === 'analytics' && (
             <div className="max-w-4xl mx-auto w-full">
-              <ClassAnalytics reports={reports} />
+              <ClassAnalytics reports={reports} config={config} />
             </div>
           )}
 
